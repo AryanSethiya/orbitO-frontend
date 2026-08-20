@@ -27,7 +27,6 @@ export function App() {
   const [roast, setRoast] = useState<AIRoast | null>(null);
   const [loadingRoast, setLoadingRoast] = useState(false);
 
-  // Generate or retrieve persistent player ID
   const getPlayerId = () => {
     let id = localStorage.getItem('orbito_player_id');
     if (!id) {
@@ -69,7 +68,6 @@ export function App() {
   };
 
   const handleNewSession = () => {
-    // Generate fresh player ID to start with 0 guesses
     localStorage.setItem('orbito_player_id', 'user_' + Math.random().toString(36).substring(2, 11));
     setShowSolveModal(false);
     initGame();
@@ -131,7 +129,6 @@ export function App() {
     }
   };
 
-  // If in landing view, render the Entry / Landing screen
   if (view === 'landing') {
     return (
       <>
@@ -158,11 +155,13 @@ export function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
-        <div className="starfield"></div>
-        <div className="orbital-plane orbit-1"></div>
-        <div className="w-12 h-12 rounded-full border-2 border-[#00f0ff] border-t-transparent animate-spin"></div>
-        <p className="font-label-mono text-xs uppercase tracking-widest text-[#00f0ff] animate-pulse">
-          Calibrating Semantic Proximity Sensors...
+        <div className="space-backdrop"></div>
+        <div className="starfield-layers"></div>
+        <div className="w-14 h-14 rounded-2xl cyber-glass border border-[#00f0ff] flex items-center justify-center shadow-[0_0_30px_rgba(0,240,255,0.4)] animate-pulse">
+          <div className="w-6 h-6 rounded-full border-2 border-[#00f0ff] border-t-transparent animate-spin"></div>
+        </div>
+        <p className="font-label-mono text-xs uppercase tracking-widest text-[#00f0ff] glow-cyan">
+          Calibrating Proximity Radar...
         </p>
       </div>
     );
@@ -171,17 +170,20 @@ export function App() {
   if (error || !session) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
-        <div className="starfield"></div>
-        <h2 className="font-headline-md text-xl text-[#ff5e07]">Orbital Uplink Offline</h2>
-        <p className="font-body-md text-sm text-[#b9cacb] max-w-sm">
-          {error || 'Unable to load today session.'}
-        </p>
-        <button
-          onClick={initGame}
-          className="mt-4 px-6 py-2.5 rounded-full border border-[#00f0ff] text-[#00f0ff] font-label-mono text-xs uppercase flex items-center gap-2 hover:bg-[#00f0ff]/10"
-        >
-          <RefreshCw className="w-4 h-4" /> Retry Connection
-        </button>
+        <div className="space-backdrop"></div>
+        <div className="starfield-layers"></div>
+        <div className="cyber-glass p-8 rounded-3xl max-w-sm flex flex-col items-center text-center">
+          <h2 className="font-headline-md text-xl text-[#ff5e07] mb-2 font-bold">Orbital Link Offline</h2>
+          <p className="font-body-md text-xs text-[#b9cacb] mb-6">
+            {error || 'Unable to establish telemetry stream.'}
+          </p>
+          <button
+            onClick={initGame}
+            className="py-3 px-6 rounded-full bg-[#00f0ff] text-[#00363a] font-label-mono text-xs font-bold uppercase flex items-center gap-2 hover:bg-[#7df4ff]"
+          >
+            <RefreshCw className="w-4 h-4" /> Reconnect
+          </button>
+        </div>
       </div>
     );
   }
@@ -190,11 +192,9 @@ export function App() {
 
   return (
     <div className="min-h-screen relative flex flex-col items-center overflow-x-hidden">
-      {/* Background Starfield & Concentric Rings */}
-      <div className="starfield"></div>
-      <div className="orbital-plane orbit-1"></div>
-      <div className="orbital-plane orbit-2"></div>
-      <div className="orbital-plane orbit-3"></div>
+      {/* Dynamic Cosmic Layers */}
+      <div className="space-backdrop"></div>
+      <div className="starfield-layers"></div>
 
       <Header
         date={session.date}
@@ -204,18 +204,18 @@ export function App() {
       />
 
       <main className="flex-grow pt-24 pb-20 px-4 w-full max-w-lg mx-auto flex flex-col items-center relative z-10">
-        <div className="flex items-center justify-between w-full mb-1">
+        <div className="flex items-center justify-between w-full mb-2 px-2">
           <div className="flex items-center gap-2">
-            <span className="font-headline-md text-lg text-[#e2e0fb]">Daily Orbit</span>
-            <span className="px-2.5 py-0.5 rounded-full border border-[#ffb59a]/30 bg-[#ffb59a]/10 text-[#ffb59a] font-label-mono text-[10px] uppercase tracking-widest">
-              {session.difficulty}
+            <span className="font-headline-md text-sm text-[#dbfcff] font-semibold">Live Orbit</span>
+            <span className="px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-[#849495] font-label-mono text-[10px]">
+              {session.date}
             </span>
           </div>
 
           <button
             onClick={handleNewSession}
-            className="text-[11px] font-label-mono text-[#849495] hover:text-[#00f0ff] flex items-center gap-1 transition-colors"
-            title="Start fresh session with 0 guesses"
+            className="text-[11px] font-label-mono text-[#849495] hover:text-[#00f0ff] flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-white/5 transition-all"
+            title="Start fresh session"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset Board</span>
@@ -244,6 +244,7 @@ export function App() {
           onGenerateRoast={(style) => loadRoast(session.sessionId, style)}
           loadingRoast={loadingRoast}
           onOpenLeaderboard={() => setShowLeaderboard(true)}
+          onResetGame={handleNewSession}
         />
       )}
 
