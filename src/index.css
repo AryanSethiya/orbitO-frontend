@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #050505;
+    color: #e2e0fb;
+    font-family: 'Outfit', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+}
+
+/* Starfield Background Animation */
+.starfield {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(1px 1px at 10% 20%, white 100%, transparent),
+    radial-gradient(1px 1px at 40% 60%, white 100%, transparent),
+    radial-gradient(1px 1px at 80% 30%, white 100%, transparent),
+    radial-gradient(2px 2px at 50% 50%, rgba(0, 240, 255, 0.5) 100%, transparent),
+    radial-gradient(1px 1px at 90% 80%, white 100%, transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(255, 255, 255, 0.8) 100%, transparent);
+  background-size: 150px 150px;
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+  animation: drift 120s linear infinite;
+}
+
+@keyframes drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-150px); }
+}
+
+/* Concentric Orbital Background Rings */
+.orbital-plane {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orbit-1 { width: 320px; height: 320px; animation: spin 45s linear infinite; }
+.orbit-2 { width: 560px; height: 560px; animation: spin 75s linear reverse infinite; }
+.orbit-3 { width: 800px; height: 800px; animation: spin 105s linear infinite; }
+
+@keyframes spin {
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: linear-gradient(180deg, rgba(30, 30, 49, 0.4) 0%, rgba(12, 12, 31, 0.6) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-panel {
+  background: rgba(30, 30, 49, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Core Gameplay Glow Elements */
+.supernova-glow {
+  box-shadow: 0 0 45px rgba(255, 92, 0, 0.25), inset 0 0 15px rgba(255, 92, 0, 0.1);
+  border-color: rgba(255, 92, 0, 0.4);
+}
+
+.cyan-glow {
+  box-shadow: 0 0 40px rgba(0, 240, 255, 0.25), inset 0 0 15px rgba(0, 240, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.4);
+}
+
+/* Radar Heat Gradient Map */
+.radar-gradient {
+  background: radial-gradient(circle at center, rgba(0, 240, 255, 0.12) 0%, rgba(255, 92, 0, 0.05) 50%, transparent 100%);
+}
+
+/* Underline Input Fields */
+.input-underline {
+  background-image: linear-gradient(to right, transparent, rgba(0, 240, 255, 0.5), transparent);
+  height: 1px;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.input-field:focus + .input-underline {
+  background-image: linear-gradient(to right, rgba(0, 240, 255, 0.2), rgba(0, 240, 255, 1), rgba(0, 240, 255, 0.2));
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  height: 2px;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(12, 12, 31, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(132, 148, 149, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 219, 233, 0.5);
+}
+
+/* AI Terminal styling */
+.terminal-window {
+  background: #0b0b1e;
+  border: 1px solid #3b494b;
+  position: relative;
+}
+.terminal-window::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+  opacity: 0.5;
+}
