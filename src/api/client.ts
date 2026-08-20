@@ -57,6 +57,6 @@ export class ApiClient {
   }
 
   static async getDailyLeaderboard(): Promise<LeaderboardResponse> {
-    return this.request<LeaderboardResponse>('/leaderboard/daily');
+    return this.request<LeaderboardResponse>('/leaderboards/daily');
   }
 }
