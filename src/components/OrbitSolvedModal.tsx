@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 interface OrbitSolvedProps {
   guessesCount: number;
   scoreBreakdown?: ScoreBreakdown | null;
+  hintsUsed?: number;
   roast: AIRoast | null;
   onGenerateRoast: (style: 'friendly' | 'savage' | 'hype') => Promise<void>;
   loadingRoast: boolean;
@@ -16,6 +17,7 @@ interface OrbitSolvedProps {
 export const OrbitSolvedModal: FC<OrbitSolvedProps> = ({
   guessesCount,
   scoreBreakdown,
+  hintsUsed = 0,
   roast,
   onGenerateRoast,
   loadingRoast,
@@ -44,7 +46,6 @@ export const OrbitSolvedModal: FC<OrbitSolvedProps> = ({
         transition={{ duration: 0.4 }}
         className="stitch-solved-card w-full max-w-2xl rounded-3xl p-6 sm:p-10 flex flex-col items-center text-center relative"
       >
-        {/* Title */}
         <h2 className="font-sans text-4xl sm:text-5xl font-extrabold text-[#ff9d00] tracking-tight drop-shadow-[0_0_20px_rgba(255,157,0,0.6)] mb-1">
           SOLVED!
         </h2>
@@ -52,7 +53,6 @@ export const OrbitSolvedModal: FC<OrbitSolvedProps> = ({
           in <span className="font-bold text-[#ff9d00]">{guessesCount}</span> guesses
         </p>
 
-        {/* AI Roast Terminal (Exact Stitch Box) */}
         <div className="w-full bg-[#070714] border border-[#00f0ff]/30 rounded-2xl p-5 sm:p-6 text-left mb-8 shadow-2xl relative overflow-hidden">
           <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
             <span className="font-mono text-xs font-bold text-[#00f0ff] tracking-wider">
@@ -91,7 +91,6 @@ export const OrbitSolvedModal: FC<OrbitSolvedProps> = ({
           </button>
         </div>
 
-        {/* Bottom 3 Stat Pods */}
         <div className="grid grid-cols-3 gap-4 w-full mb-8">
           <div className="stitch-card p-4 rounded-2xl flex flex-col items-center">
             <span className="font-mono text-[10px] text-[#8080a0] uppercase tracking-wider">Score</span>
@@ -103,11 +102,10 @@ export const OrbitSolvedModal: FC<OrbitSolvedProps> = ({
           </div>
           <div className="stitch-card p-4 rounded-2xl flex flex-col items-center">
             <span className="font-mono text-[10px] text-[#8080a0] uppercase tracking-wider">Hints Used</span>
-            <span className="font-mono text-xl sm:text-2xl font-bold text-[#eef2ff]">{scoreBreakdown?.hintsUsed ?? 0}</span>
+            <span className="font-mono text-xl sm:text-2xl font-bold text-[#eef2ff]">{hintsUsed}</span>
           </div>
         </div>
 
-        {/* Play Again Button */}
         <div className="flex gap-4">
           <button
             onClick={onReset}

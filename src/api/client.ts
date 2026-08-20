@@ -1,77 +1,45 @@
-import type { DailyPuzzle, SessionSummary, GuessResult, HintResult, AIRoast, LeaderboardEntry } from '../types/game';
+import type { SessionSummary, GuessResult, HintResult, AIRoast, LeaderboardResponse } from '../types/game';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const RAW_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:3000';
+const BASE_URL = RAW_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export class ApiClient {
-  private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+  private static async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const cleanPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const targetUrl = `${BASE_URL}/api/v1${cleanPath}`;
+
+    const res = await fetch(targetUrl, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...options?.headers,
       },
     });
 
     if (!res.ok) {
-      let errorMsg = 'Request failed';
+      let errorMsg = 'HTTP Error ' + res.status;
       try {
-        const err = await res.json();
-        errorMsg = err.message || err.error || errorMsg;
+        const errorData = await res.json();
+        errorMsg = errorData.message || errorData.error || errorMsg;
       } catch {}
       throw new Error(errorMsg);
     }
 
-    const data = await res.json();
-
-    // Map backend session format if necessary
-    if (endpoint === '/sessions' && options.method === 'POST') {
-      return {
-        sessionId: data.sessionId,
-        puzzleId: data.puzzleId || '',
-        date: data.puzzleDate || new Date().toISOString().split('T')[0],
-        difficulty: data.puzzleDifficulty || 'medium',
-        status: data.solved ? 'solved' : 'in_progress',
-        startedAt: data.startedAt || new Date().toISOString(),
-        completedAt: data.completedAt || null,
-        guessesCount: data.guessesCount || 0,
-        hintsUsed: data.hintsUsed || 0,
-        bestRank: data.bestRank || null,
-        score: data.score ?? 1000,
-        guesses: (data.guesses || []).map((g: any) => ({
-          word: g.word,
-          normalizedWord: g.normalizedWord,
-          rank: g.rank,
-          semanticScore: g.semanticScore,
-          signal: g.signal,
-          guessesCount: g.rank,
-          isSolved: g.rank === 1,
-        })),
-        unlockedHints: data.revealedHints || [],
-      } as unknown as T;
-    }
-
-    return data;
-  }
-
-  static async getTodayPuzzle(): Promise<DailyPuzzle> {
-    return this.request<DailyPuzzle>('/puzzles/today');
+    return res.json();
   }
 
   static async startSession(userId?: string): Promise<SessionSummary> {
+    const payload = userId && userId.length === 36 ? { userId } : {};
     return this.request<SessionSummary>('/sessions', {
       method: 'POST',
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify(payload),
     });
-  }
-
-  static async getSessionSummary(sessionId: string): Promise<SessionSummary> {
-    return this.request<SessionSummary>(`/sessions/${sessionId}`);
   }
 
   static async submitGuess(sessionId: string, guess: string): Promise<GuessResult> {
     return this.request<GuessResult>(`/sessions/${sessionId}/guess`, {
       method: 'POST',
-      body: JSON.stringify({ guess }),
+      body: JSON.stringify({ guess: guess.trim().toLowerCase() }),
     });
   }
 
@@ -88,8 +56,7 @@ export class ApiClient {
     });
   }
 
-  static async getDailyLeaderboard(date?: string): Promise<{ date: string; totalEntries: number; leaderboard: LeaderboardEntry[] }> {
-    const query = date ? `?date=${date}` : '';
-    return this.request(`/leaderboards/daily${query}`);
+  static async getDailyLeaderboard(): Promise<LeaderboardResponse> {
+    return this.request<LeaderboardResponse>('/leaderboard/daily');
   }
 }

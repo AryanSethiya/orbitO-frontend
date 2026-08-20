@@ -1,46 +1,27 @@
-export type ProximityTier = 'CENTER' | 'BURNING' | 'VERY_HOT' | 'HOT' | 'WARM' | 'COLD' | 'DEEP_SPACE';
-
-export interface ProximitySignal {
-  tier: ProximityTier;
-  label: string;
+export interface SemanticSignal {
+  tier: 'CENTER' | 'BURNING' | 'VERY_HOT' | 'HOT' | 'WARM' | 'LUKEWARM' | 'COOL' | 'COLD' | 'DEEP_SPACE';
   emoji: string;
-  rank: number;
+  label: string;
+  color: string;
 }
 
 export interface ScoreBreakdown {
   baseScore: number;
-  guessesCount: number;
-  guessPenaltyTotal: number;
-  hintsUsed: number;
-  hintPenaltyTotal: number;
+  guessesPenalty: number;
+  hintsPenalty: number;
+  timeBonus: number;
   finalScore: number;
+  hintsUsed?: number;
 }
 
 export interface GuessResult {
   word: string;
-  normalizedWord: string;
   rank: number;
-  semanticScore: number;
-  signal: ProximitySignal;
-  guessesCount: number;
+  similarity: number;
+  distance: number;
+  signal: SemanticSignal;
   isSolved: boolean;
-  scoreBreakdown?: ScoreBreakdown | null;
-}
-
-export interface HintResult {
-  hintNumber: number;
-  hintText: string;
-  hintsUsed: number;
-  remainingHints: number;
-  penaltyCost: number;
-}
-
-export interface DailyPuzzle {
-  id: string;
-  date: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  vocabularyVersion: string;
-  status: string;
+  scoreBreakdown?: ScoreBreakdown;
 }
 
 export interface SessionSummary {
@@ -49,22 +30,22 @@ export interface SessionSummary {
   date: string;
   difficulty: string;
   status: 'in_progress' | 'solved' | 'abandoned';
-  startedAt: string;
-  completedAt?: string | null;
   guessesCount: number;
   hintsUsed: number;
-  bestRank?: number | null;
-  bestWord?: string | null;
   score: number;
   guesses: GuessResult[];
   unlockedHints: string[];
 }
 
+export interface HintResult {
+  hintText: string;
+  hintsUsed: number;
+  penalty: number;
+}
+
 export interface AIRoast {
-  sessionId: string;
   roastText: string;
-  roastStyle: 'friendly' | 'savage' | 'hype' | 'balanced';
-  cached: boolean;
+  style: 'friendly' | 'savage' | 'hype' | 'balanced';
 }
 
 export interface LeaderboardEntry {
@@ -72,5 +53,13 @@ export interface LeaderboardEntry {
   userId: string;
   username: string;
   score: number;
-  avatarUrl?: string;
+  guessesCount: number;
+  hintsUsed: number;
+  completedAt: string;
+}
+
+export interface LeaderboardResponse {
+  date: string;
+  totalParticipants: number;
+  leaderboard: LeaderboardEntry[];
 }
