@@ -14,10 +14,13 @@ export function App() {
   const [roast, setRoast] = useState<AIRoast | null>(null);
   const [loadingRoast, setLoadingRoast] = useState(false);
 
+  // Generate valid RFC4122 UUID for backend Zod validator
   const getPlayerId = () => {
     let id = localStorage.getItem('orbito_player_id');
-    if (!id) {
-      id = 'user_' + Math.random().toString(36).substring(2, 11);
+    if (!id || id.startsWith('user_') || id.length < 32) {
+      id = typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : '00000000-0000-0000-0000-000000000000';
       localStorage.setItem('orbito_player_id', id);
     }
     return id;
@@ -45,7 +48,7 @@ export function App() {
   };
 
   const handleResetBoard = () => {
-    localStorage.setItem('orbito_player_id', 'user_' + Math.random().toString(36).substring(2, 11));
+    localStorage.removeItem('orbito_player_id');
     startSession();
   };
 
