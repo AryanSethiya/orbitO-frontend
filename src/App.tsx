@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Header } from './components/Header.js';
-import { OrbitRadar } from './components/OrbitRadar.js';
-import { GuessInput } from './components/GuessInput.js';
-import { RecentGuesses } from './components/RecentGuesses.js';
-import { HintDrawer } from './components/HintDrawer.js';
-import { SolveModal } from './components/SolveModal.js';
-import { LeaderboardModal } from './components/LeaderboardModal.js';
-import { HelpModal } from './components/HelpModal.js';
-import { ApiClient } from './api/client.js';
-import type { SessionSummary, GuessResult, AIRoast } from './types/game.js';
+import { Header } from './components/Header';
+import { OrbitRadar } from './components/OrbitRadar';
+import { GuessInput } from './components/GuessInput';
+import { RecentGuesses } from './components/RecentGuesses';
+import { HintDrawer } from './components/HintDrawer';
+import { SolveModal } from './components/SolveModal';
+import { LeaderboardModal } from './components/LeaderboardModal';
+import { HelpModal } from './components/HelpModal';
+import { ApiClient } from './api/client';
+import type { SessionSummary, GuessResult, AIRoast } from './types/game';
 import { RefreshCw } from 'lucide-react';
 
 export function App() {
@@ -153,18 +153,18 @@ export function App() {
           </span>
         </div>
 
-        <OrbitRadar guesses={session.guesses} isSolved={isSolved} />
+        <OrbitRadar guesses={session.guesses || []} isSolved={isSolved} />
 
         <GuessInput onSubmit={handleGuess} disabled={isSolved} />
 
         <HintDrawer
-          unlockedHints={session.unlockedHints}
+          unlockedHints={session.unlockedHints || []}
           onRequestHint={handleRequestHint}
           loading={false}
           isSolved={isSolved}
         />
 
-        <RecentGuesses guesses={session.guesses} />
+        <RecentGuesses guesses={session.guesses || []} />
       </main>
 
       {isSolved && (

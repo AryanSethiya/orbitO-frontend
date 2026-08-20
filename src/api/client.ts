@@ -1,4 +1,4 @@
-import type { DailyPuzzle, SessionSummary, GuessResult, HintResult, AIRoast, LeaderboardEntry } from '../types/game.js';
+import type { DailyPuzzle, SessionSummary, GuessResult, HintResult, AIRoast, LeaderboardEntry } from '../types/game';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
@@ -21,7 +21,36 @@ export class ApiClient {
       throw new Error(errorMsg);
     }
 
-    return res.json();
+    const data = await res.json();
+
+    // Map backend session format if necessary
+    if (endpoint === '/sessions' && options.method === 'POST') {
+      return {
+        sessionId: data.sessionId,
+        puzzleId: data.puzzleId || '',
+        date: data.puzzleDate || new Date().toISOString().split('T')[0],
+        difficulty: data.puzzleDifficulty || 'medium',
+        status: data.solved ? 'solved' : 'in_progress',
+        startedAt: data.startedAt || new Date().toISOString(),
+        completedAt: data.completedAt || null,
+        guessesCount: data.guessesCount || 0,
+        hintsUsed: data.hintsUsed || 0,
+        bestRank: data.bestRank || null,
+        score: data.score ?? 1000,
+        guesses: (data.guesses || []).map((g: any) => ({
+          word: g.word,
+          normalizedWord: g.normalizedWord,
+          rank: g.rank,
+          semanticScore: g.semanticScore,
+          signal: g.signal,
+          guessesCount: g.rank,
+          isSolved: g.rank === 1,
+        })),
+        unlockedHints: data.revealedHints || [],
+      } as unknown as T;
+    }
+
+    return data;
   }
 
   static async getTodayPuzzle(): Promise<DailyPuzzle> {

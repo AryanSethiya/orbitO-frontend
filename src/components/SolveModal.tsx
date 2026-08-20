@@ -1,5 +1,5 @@
 import { useState, type FC } from 'react';
-import type { ScoreBreakdown, AIRoast } from '../types/game.js';
+import type { ScoreBreakdown, AIRoast } from '../types/game';
 import { Share2, Sparkles, Trophy, Check, Terminal } from 'lucide-react';
 import { motion } from 'framer-motion';
 

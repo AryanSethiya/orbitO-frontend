@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import type { GuessResult } from '../types/game.js';
+import type { GuessResult } from '../types/game';
 import { motion } from 'framer-motion';
 
 interface OrbitRadarProps {
@@ -63,7 +63,7 @@ export const OrbitRadar: FC<OrbitRadarProps> = ({ guesses, isSolved }) => {
       {/* Render recent guess points */}
       {guesses.slice(-8).map((g, idx) => {
         const { x, y } = getNodePosition(g.rank, idx);
-        const color = getHeatColor(g.signal.tier);
+        const color = getHeatColor(g?.signal?.tier || 'COLD');
 
         return (
           <motion.div

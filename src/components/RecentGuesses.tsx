@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import type { GuessResult } from '../types/game.js';
+import type { GuessResult } from '../types/game';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface RecentGuessesProps {
@@ -7,7 +7,7 @@ interface RecentGuessesProps {
 }
 
 export const RecentGuesses: FC<RecentGuessesProps> = ({ guesses }) => {
-  if (guesses.length === 0) {
+  if (!guesses || guesses.length === 0) {
     return (
       <div className="w-full max-w-md my-6 text-center text-[#b9cacb] font-label-mono text-xs opacity-60">
         Type any word to probe the semantic starfield...
@@ -32,11 +32,11 @@ export const RecentGuesses: FC<RecentGuessesProps> = ({ guesses }) => {
         <AnimatePresence initial={false}>
           {reversed.map((g, idx) => {
             const isLatest = idx === 0;
-            const percent = Math.max(5, Math.min(100, Math.round(100 - Math.log10(g.rank) * 22)));
+            const percent = Math.max(5, Math.min(100, Math.round(100 - Math.log10(g.rank || 1) * 22)));
 
             return (
               <motion.div
-                key={`${g.word}-${g.guessesCount}`}
+                key={`${g.word}-${idx}`}
                 initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
@@ -48,13 +48,13 @@ export const RecentGuesses: FC<RecentGuessesProps> = ({ guesses }) => {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">{g.signal.emoji}</span>
+                  <span className="text-lg">{g.signal?.emoji || '🌌'}</span>
                   <div className="flex flex-col">
                     <span className="font-semantic-word text-base text-[#e2e0fb] font-medium capitalize">
                       {g.word}
                     </span>
                     <span className="font-label-mono text-[10px] text-[#b9cacb]">
-                      {g.signal.label}
+                      {g.signal?.label || 'Deep Space'}
                     </span>
                   </div>
                 </div>
@@ -69,7 +69,7 @@ export const RecentGuesses: FC<RecentGuessesProps> = ({ guesses }) => {
                         : 'text-[#849495]'
                     }`}
                   >
-                    Rank #{g.rank.toLocaleString()}
+                    Rank #{g.rank ? g.rank.toLocaleString() : '-'}
                   </span>
 
                   <div className="h-1.5 w-16 bg-[#0c0c1f] rounded-full overflow-hidden">

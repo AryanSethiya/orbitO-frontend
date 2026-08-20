@@ -1,6 +1,6 @@
 import { useEffect, useState, type FC } from 'react';
-import type { LeaderboardEntry } from '../types/game.js';
-import { ApiClient } from '../api/client.js';
+import type { LeaderboardEntry } from '../types/game';
+import { ApiClient } from '../api/client';
 import { X, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -16,7 +16,7 @@ export const LeaderboardModal: FC<LeaderboardModalProps> = ({ onClose }) => {
   useEffect(() => {
     ApiClient.getDailyLeaderboard()
       .then((res) => {
-        setEntries(res.leaderboard);
+        setEntries(res?.leaderboard || []);
       })
       .catch((err) => console.error('Failed to load leaderboard:', err))
       .finally(() => setLoading(false));
@@ -74,10 +74,10 @@ export const LeaderboardModal: FC<LeaderboardModalProps> = ({ onClose }) => {
                       #{entry.rank}
                     </span>
                     <div className="w-8 h-8 rounded-full bg-[#28283c] border border-white/10 flex items-center justify-center text-xs font-bold text-white">
-                      {entry.username.charAt(0).toUpperCase()}
+                      {entry.username ? entry.username.charAt(0).toUpperCase() : 'P'}
                     </div>
                     <span className="font-body-md text-sm text-[#e2e0fb] font-medium">
-                      {entry.username}
+                      {entry.username || 'Anonymous Pioneer'}
                     </span>
                   </div>
 

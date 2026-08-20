@@ -9,7 +9,7 @@ interface HintDrawerProps {
 }
 
 export const HintDrawer: FC<HintDrawerProps> = ({
-  unlockedHints,
+  unlockedHints = [],
   onRequestHint,
   loading,
   isSolved,
