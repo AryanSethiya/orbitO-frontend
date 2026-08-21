@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ApiClient } from './api/client';
 import type { Guess, UserProfile } from './types/game';
 import { Navbar } from './components/Navbar';
+import { LandingAuthView } from './components/LandingAuthView';
 import { DailyOrbitDesktop } from './components/DailyOrbitDesktop';
 import { OrbitSolvedModal } from './components/OrbitSolvedModal';
 import { SpaceStandingsView } from './components/SpaceStandingsView';
@@ -23,7 +24,7 @@ export default function App() {
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
 
   useEffect(() => {
-    // Restore User Profile
+    // Restore User Profile if previously logged in
     const cachedUser = localStorage.getItem('orbito_user');
     if (cachedUser) {
       try {
@@ -31,10 +32,8 @@ export default function App() {
         setUser(u);
         initSession(u.id);
       } catch {
-        initSession();
+        // Unauthenticated -> Landing View
       }
-    } else {
-      initSession();
     }
   }, []);
 
@@ -69,6 +68,7 @@ export default function App() {
   const handleLoginSuccess = (newUser: UserProfile) => {
     setUser(newUser);
     initSession(newUser.id);
+    setCurrentView('game');
   };
 
   const handleLogout = () => {
@@ -77,6 +77,9 @@ export default function App() {
     localStorage.removeItem('orbito_player_id');
     setUser(null);
     setActiveRoomCode(null);
+    setGuesses([]);
+    setSolved(false);
+    setUnlockedHints([]);
   };
 
   const handleSubmitGuess = async (word: string) => {
@@ -141,6 +144,21 @@ export default function App() {
       localStorage.setItem('orbito_user', JSON.stringify(updatedUser));
     }
   };
+
+  // If user is not authenticated, show Landing Sign-In Page
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#05050c] text-[#eef2ff] font-sans relative overflow-x-hidden selection:bg-[#00f0ff] selection:text-[#05050c]">
+        {/* Dynamic Starfield Background */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-[#00f0ff]/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-[#ff5e07]/5 rounded-full blur-3xl" />
+        </div>
+
+        <LandingAuthView onLoginSuccess={handleLoginSuccess} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#05050c] text-[#eef2ff] font-sans relative overflow-x-hidden selection:bg-[#00f0ff] selection:text-[#05050c]">
