@@ -11,6 +11,7 @@ export function App() {
   const [currentView, setCurrentView] = useState<'mission_control' | 'gameplay' | 'solved' | 'standings'>('mission_control');
   const [session, setSession] = useState<SessionSummary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingHint, setLoadingHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roast, setRoast] = useState<AIRoast | null>(null);
   const [loadingRoast, setLoadingRoast] = useState(false);
@@ -34,7 +35,7 @@ export function App() {
       const sess = await ApiClient.startSession(id);
       setSession(sess);
 
-      if (sess.status === 'solved') {
+      if (sess.solved || sess.status === 'solved') {
         setCurrentView('solved');
         loadRoast(sess.sessionId, 'savage');
       } else {
@@ -59,13 +60,13 @@ export function App() {
     try {
       const result = await ApiClient.submitGuess(session.sessionId, guess);
       const updatedGuesses = [...(session.guesses || []), result];
-      const isSolved = result.isSolved;
+      const isSolved = result.isSolved || result.rank === 1;
 
       setSession({
         ...session,
         guesses: updatedGuesses,
         guessesCount: updatedGuesses.length,
-        status: isSolved ? 'solved' : session.status,
+        solved: isSolved,
         score: result.scoreBreakdown?.finalScore ?? session.score,
       });
 
@@ -79,16 +80,23 @@ export function App() {
   };
 
   const handleRequestHint = async () => {
-    if (!session) return;
+    if (!session || loadingHint) return;
     try {
+      setLoadingHint(true);
       const res = await ApiClient.requestHint(session.sessionId);
+      const currentHints = session.revealedHints || session.unlockedHints || [];
+      const updatedHints = [...currentHints, res.hintText];
+
       setSession({
         ...session,
         hintsUsed: res.hintsUsed,
-        unlockedHints: [...(session.unlockedHints || []), res.hintText],
+        revealedHints: updatedHints,
+        unlockedHints: updatedHints,
       });
     } catch (err: any) {
-      alert(err.message || 'Hint error');
+      alert(err.message || 'Could not unlock hint');
+    } finally {
+      setLoadingHint(false);
     }
   };
 
@@ -114,7 +122,7 @@ export function App() {
         onSelectTab={(tab) => {
           if (tab === 'standings') setCurrentView('standings');
           if (tab === 'play') {
-            if (session) setCurrentView(session.status === 'solved' ? 'solved' : 'gameplay');
+            if (session) setCurrentView(session.solved ? 'solved' : 'gameplay');
             else startSession();
           }
         }}
@@ -142,7 +150,7 @@ export function App() {
             onGuess={handleGuess}
             onRequestHint={handleRequestHint}
             onReset={handleResetBoard}
-            loading={loading}
+            loadingHint={loadingHint}
           />
         ) : (
           <div className="min-h-screen flex flex-col items-center justify-center gap-4 relative z-20">

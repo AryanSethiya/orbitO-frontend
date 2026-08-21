@@ -2,7 +2,8 @@ export interface SemanticSignal {
   tier: 'CENTER' | 'BURNING' | 'VERY_HOT' | 'HOT' | 'WARM' | 'LUKEWARM' | 'COOL' | 'COLD' | 'DEEP_SPACE';
   emoji: string;
   label: string;
-  color: string;
+  color?: string;
+  rank?: number;
 }
 
 export interface ScoreBreakdown {
@@ -15,32 +16,44 @@ export interface ScoreBreakdown {
 }
 
 export interface GuessResult {
+  id?: string;
   word: string;
+  normalizedWord: string;
   rank: number;
-  similarity: number;
-  distance: number;
+  semanticScore: number;
   signal: SemanticSignal;
-  isSolved: boolean;
+  guessesCount?: number;
+  isSolved?: boolean;
   scoreBreakdown?: ScoreBreakdown;
+  createdAt?: string;
 }
 
 export interface SessionSummary {
   sessionId: string;
-  puzzleId: string;
-  date: string;
-  difficulty: string;
-  status: 'in_progress' | 'solved' | 'abandoned';
+  puzzleDate: string;
+  puzzleDifficulty: string;
+  solved: boolean;
+  score: number;
   guessesCount: number;
   hintsUsed: number;
-  score: number;
+  revealedHints: string[];
+  bestRank: number | null;
+  startedAt?: string | Date;
+  completedAt?: string | Date | null;
   guesses: GuessResult[];
-  unlockedHints: string[];
+  // Aliases
+  date?: string;
+  difficulty?: string;
+  status?: string;
+  unlockedHints?: string[];
 }
 
 export interface HintResult {
+  hintNumber: number;
   hintText: string;
   hintsUsed: number;
-  penalty: number;
+  remainingHints: number;
+  penaltyCost: number;
 }
 
 export interface AIRoast {
@@ -53,13 +66,13 @@ export interface LeaderboardEntry {
   userId: string;
   username: string;
   score: number;
-  guessesCount: number;
-  hintsUsed: number;
-  completedAt: string;
+  guessesCount?: number;
+  hintsUsed?: number;
+  completedAt?: string;
 }
 
 export interface LeaderboardResponse {
   date: string;
-  totalParticipants: number;
+  totalEntries: number;
   leaderboard: LeaderboardEntry[];
 }

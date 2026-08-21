@@ -46,6 +46,7 @@ export class ApiClient {
   static async requestHint(sessionId: string): Promise<HintResult> {
     return this.request<HintResult>(`/sessions/${sessionId}/hints`, {
       method: 'POST',
+      body: JSON.stringify({}),
     });
   }
 
