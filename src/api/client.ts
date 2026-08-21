@@ -1,6 +1,6 @@
 import type { SessionSummary, GuessResult, HintResult, AIRoast, LeaderboardResponse, UserProfile } from '../types/game';
 
-const RAW_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:3000';
+const RAW_URL = import.meta.env.VITE_API_URL || 'https://orbito-backend-zacg.onrender.com';
 const BASE_URL = RAW_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export class ApiClient {
@@ -39,7 +39,7 @@ export class ApiClient {
     return res.json();
   }
 
-  static async loginWithGoogle(credentialOrData: { credential?: string; email?: string; name?: string; picture?: string; community?: string }): Promise<{ user: UserProfile; token: string }> {
+  static async loginWithGoogle(credentialOrData: { credential?: string; email?: string; name?: string; picture?: string; googleId?: string; community?: string }): Promise<{ user: UserProfile; token: string }> {
     return this.request<{ user: UserProfile; token: string }>('/auth/google', {
       method: 'POST',
       body: JSON.stringify(credentialOrData),
