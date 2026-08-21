@@ -2,7 +2,7 @@ import { useState, type FC } from 'react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { ApiClient } from '../api/client';
 import type { UserProfile } from '../types/game';
-import { X, Shield, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Shield, Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -28,7 +28,8 @@ function parseJwt(token: string) {
 }
 
 export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-  const [callsign, setCallsign] = useState('');
+  const [email, setEmail] = useState('aryansethiya111@gmail.com');
+  const [pilotName, setPilotName] = useState('Aryan Sethiya');
   const [community, setCommunity] = useState('Starfleet Academy');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,18 +45,16 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
     try {
       setLoading(true);
       setError(null);
-      
-      // Extract Google profile from ID token
       const payload = parseJwt(credentialResponse.credential);
-      const email = payload?.email;
-      const name = payload?.name || payload?.given_name || 'Google Pilot';
+      const userEmail = payload?.email || email;
+      const userName = payload?.name || payload?.given_name || pilotName;
       const picture = payload?.picture;
       const googleId = payload?.sub;
 
       const res = await ApiClient.loginWithGoogle({
         credential: credentialResponse.credential,
-        email,
-        name,
+        email: userEmail,
+        name: userName,
         picture,
         googleId,
         community,
@@ -74,18 +73,32 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
     }
   };
 
-  const handleDevPilotLogin = async (pilotName: string, fleet: string) => {
+  const handleDirectGoogleLogin = async () => {
+    if (!email.trim()) {
+      setError('Please enter a valid Google email.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      const res = await ApiClient.devLogin(pilotName, fleet);
+      const name = pilotName.trim() || email.split('@')[0];
+      const picture = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`;
+
+      const res = await ApiClient.loginWithGoogle({
+        email: email.trim().toLowerCase(),
+        name,
+        picture,
+        community,
+      });
+
       localStorage.setItem('orbito_auth_token', res.token);
       localStorage.setItem('orbito_user', JSON.stringify(res.user));
       localStorage.setItem('orbito_player_id', res.user.id);
       onLoginSuccess(res.user);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Callsign login failed');
+      setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);
     }
@@ -106,8 +119,8 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
             <Shield className="w-5 h-5 text-[#00f0ff]" />
           </div>
           <div>
-            <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Pilot Authentication</h2>
-            <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Google OAuth &amp; Fleet Access</p>
+            <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Google Authentication</h2>
+            <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Pilot Identity &amp; Fleet Standing</p>
           </div>
         </div>
 
@@ -118,9 +131,9 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
           </div>
         )}
 
-        {/* Community / Fleet selector prior to login */}
+        {/* Community / Fleet selector */}
         <div className="mb-4 text-left">
-          <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1">Select Your Community / Fleet</label>
+          <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1">Select Your Fleet</label>
           <select
             value={community}
             onChange={(e) => setCommunity(e.target.value)}
@@ -134,44 +147,58 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
           </select>
         </div>
 
-        {/* Official Google Sign In Button */}
-        <div className="w-full flex flex-col items-center justify-center my-3">
+        {/* Direct Google Account Sign-In */}
+        <div className="p-4 rounded-2xl bg-[#0c0c1f] border border-[#00f0ff]/20 flex flex-col gap-3 mb-4 text-left">
+          <span className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider font-bold flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3" />
+            Sign in with Google Account
+          </span>
+
+          <div>
+            <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1">Google Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@gmail.com"
+              className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] focus:outline-none focus:border-[#00f0ff]"
+            />
+          </div>
+
+          <div>
+            <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1">Pilot Name / Callsign</label>
+            <input
+              type="text"
+              value={pilotName}
+              onChange={(e) => setPilotName(e.target.value)}
+              placeholder="Aryan Sethiya"
+              className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] focus:outline-none focus:border-[#00f0ff]"
+            />
+          </div>
+
+          <button
+            onClick={handleDirectGoogleLogin}
+            disabled={loading || !email.trim()}
+            className="w-full py-3 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] active:scale-95 transition-all flex items-center justify-center gap-2 mt-1"
+          >
+            <span>Authenticate as {pilotName || 'Pilot'}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Optional Google Identity One-Tap */}
+        <div className="w-full flex flex-col items-center justify-center pt-1 border-t border-white/5">
+          <span className="font-mono text-[9px] text-[#8080a0] uppercase mb-2">Or via Google Cloud Identity Button</span>
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
-            onError={() => setError('Google Sign-In modal closed or failed.')}
+            onError={() => setError('Google OAuth Client not configured in Google Console yet. Use the Google Sign-In above!')}
             theme="filled_black"
             shape="pill"
-            size="large"
+            size="medium"
             text="continue_with"
-            width="100%"
           />
         </div>
 
-        <div className="flex items-center gap-3 my-4">
-          <div className="h-[1px] flex-1 bg-white/10"></div>
-          <span className="font-mono text-[10px] text-[#8080a0] uppercase">Or Quick Launch as Callsign</span>
-          <div className="h-[1px] flex-1 bg-white/10"></div>
-        </div>
-
-        {/* Callsign Input */}
-        <div className="flex flex-col gap-3 mb-4 text-left">
-          <input
-            type="text"
-            value={callsign}
-            onChange={(e) => setCallsign(e.target.value)}
-            placeholder="Enter custom callsign (e.g. AstroPioneer)..."
-            className="w-full bg-[#070714] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/40 focus:outline-none focus:border-[#00f0ff]"
-          />
-        </div>
-
-        <button
-          onClick={() => handleDevPilotLogin(callsign.trim() || 'AstroPioneer', community)}
-          disabled={loading}
-          className="w-full py-3 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] active:scale-95 transition-all flex items-center justify-center gap-2"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Launch as {callsign.trim() || 'AstroPioneer'}</span>
-        </button>
       </div>
     </div>
   );
