@@ -31,8 +31,11 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
   const loadStandings = async (tab: string) => {
     try {
       setLoading(true);
-      const roomFilter = tab === 'Room' && activeRoomCode ? activeRoomCode : undefined;
-      const res = await ApiClient.getLeaderboard({ roomCode: roomFilter });
+      const isRoomTab = tab === 'Room';
+      const roomFilter = isRoomTab && activeRoomCode ? activeRoomCode : undefined;
+      const commFilter = isRoomTab && user?.community && user.community !== 'Global Explorers' ? user.community : undefined;
+      
+      const res = await ApiClient.getLeaderboard({ roomCode: roomFilter, community: commFilter });
       setEntries(res.leaderboard || []);
     } catch (err) {
       console.error('Error loading leaderboard:', err);
@@ -81,7 +84,7 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>🛸 ${currentCommunityName}</span>
+            <span>🛸 {currentCommunityName}</span>
           </button>
         )}
 
