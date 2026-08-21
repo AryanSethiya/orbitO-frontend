@@ -53,7 +53,7 @@ export default function App() {
           id: g.id,
           word: g.word?.word || g.word,
           rank: g.rank || 500,
-          similarityScore: g.similarityScore || 0.5,
+          similarityScore: g.semanticScore !== undefined ? g.semanticScore : (g.similarityScore !== undefined ? g.similarityScore : (g.rank === 1 ? 1.0 : 0.5)),
           scoreDelta: g.scoreDelta || -5,
           createdAt: g.createdAt,
         })));

@@ -193,7 +193,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                       }`}>
                         #{g.rank}
                       </span>
-                      <span className="text-[10px] text-[#8080a0]">{Math.round(g.similarityScore * 100)}% Sim</span>
+                      <span className="text-[10px] text-[#8080a0]">{g.rank === 1 ? '100% Sim' : Math.round(g.similarityScore * 100) + '% Sim'}</span>
                     </div>
                   </div>
                 ))}
