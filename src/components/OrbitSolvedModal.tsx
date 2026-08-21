@@ -1,6 +1,6 @@
 import { useState, useEffect, type FC } from 'react';
 import { ApiClient } from '../api/client';
-import { Trophy, Share2, Clock, Check, Terminal, X } from 'lucide-react';
+import { Trophy, Share2, Clock, Check, Flame, X } from 'lucide-react';
 
 interface OrbitSolvedModalProps {
   isOpen: boolean;
@@ -23,7 +23,6 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
 }) => {
   const [streamedRoast, setStreamedRoast] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [roastStyle, setRoastStyle] = useState<'playful' | 'savage' | 'hype'>('playful');
   const [countdown, setCountdown] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -45,16 +44,16 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
 
   useEffect(() => {
     if (isOpen && sessionId) {
-      fetchRoast(roastStyle);
+      fetchSavageRoast();
     }
   }, [isOpen, sessionId]);
 
-  const fetchRoast = async (style: 'playful' | 'savage' | 'hype') => {
+  const fetchSavageRoast = async () => {
     try {
-      const res = await ApiClient.generateRoast(sessionId, style);
+      const res = await ApiClient.generateRoast(sessionId, 'savage');
       streamText(res.roastText);
     } catch {
-      const fallback = `You locked onto the center target in ${guessesCount} probes with a final score of ${finalScore} pts. Witty orbit maneuvering!`;
+      const fallback = `Took you ${guessesCount} chaotic probes just to stumble into "${targetWord}"? Even an offline satellite navigates faster than that.`;
       streamText(fallback);
     }
   };
@@ -79,7 +78,8 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
   const handleShare = () => {
     const text = `🛰️ Orbito // Orbit Solved!
 🎯 Score: ${finalScore} pts | ${guessesCount} Probes
-🪐 Play today's semantic puzzle: https://orbito-backend-zacg.onrender.com`;
+🔥 Savage Roast: "${streamedRoast}"
+🪐 Play today: https://orbito-backend-zacg.onrender.com`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -87,7 +87,7 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-[#05050c]/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg stitch-card rounded-3xl p-6 sm:p-8 border border-[#00ff88]/30 relative shadow-[0_0_50px_rgba(0,255,136,0.15)] text-center">
+      <div className="w-full max-w-lg stitch-card rounded-3xl p-6 sm:p-8 border border-[#ff5e07]/40 relative shadow-[0_0_50px_rgba(255,94,7,0.2)] text-center">
         <button
           onClick={onClose}
           className="absolute right-5 top-5 text-[#8080a0] hover:text-[#eef2ff] transition-colors"
@@ -126,32 +126,21 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
           </div>
         </div>
 
-        {/* Live Streaming AI Roast Terminal */}
-        <div className="text-left rounded-2xl bg-[#070714] border border-[#00f0ff]/25 p-4 mb-5 shadow-inner">
+        {/* Live Streaming Savage AI Roast Terminal */}
+        <div className="text-left rounded-2xl bg-[#070714] border border-[#ff5e07]/30 p-4 mb-5 shadow-inner">
           <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-white/5">
-            <span className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider font-bold flex items-center gap-1.5">
-              <Terminal className="w-3.5 h-3.5" />
-              Deep Space Neural Roast // Gemini 3.5
+            <span className="font-mono text-[10px] text-[#ff5e07] uppercase tracking-wider font-bold flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5" />
+              Savage Neural Roast // Gemini 3.5
             </span>
-
-            <div className="flex gap-1">
-              {(['playful', 'savage', 'hype'] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => { setRoastStyle(s); fetchRoast(s); }}
-                  className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase font-bold transition-all ${
-                    roastStyle === s ? 'bg-[#00f0ff] text-[#05050c]' : 'text-[#8080a0] hover:text-[#eef2ff]'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <span className="font-mono text-[9px] text-[#8080a0] uppercase font-bold">
+              [Savage Mode]
+            </span>
           </div>
 
-          <p className="font-mono text-xs text-[#eef2ff] leading-relaxed min-h-[50px]">
+          <p className="font-mono text-xs text-[#eef2ff] leading-relaxed min-h-[55px]">
             {streamedRoast}
-            {isStreaming && <span className="inline-block w-2 h-3.5 bg-[#00f0ff] ml-1 animate-pulse" />}
+            {isStreaming && <span className="inline-block w-2 h-3.5 bg-[#ff5e07] ml-1 animate-pulse" />}
           </p>
         </div>
 
@@ -167,7 +156,7 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
             className="py-3 rounded-xl bg-white/10 hover:bg-white/20 text-[#eef2ff] font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 border border-white/10"
           >
             {copied ? <Check className="w-4 h-4 text-[#00ff88]" /> : <Share2 className="w-4 h-4" />}
-            <span>{copied ? 'Copied!' : 'Share Score'}</span>
+            <span>{copied ? 'Copied!' : 'Share Roast'}</span>
           </button>
 
           <button

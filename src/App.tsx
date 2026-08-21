@@ -114,11 +114,22 @@ export default function App() {
   const handleRequestHint = async () => {
     if (!sessionId) return;
     try {
-      const res = await ApiClient.requestHint(sessionId);
-      setUnlockedHints(res.session.revealedHints || []);
-      setCurrentScore(res.session.score);
+      const res: any = await ApiClient.requestHint(sessionId);
+      if (res.revealedHints && Array.isArray(res.revealedHints)) {
+        setUnlockedHints(res.revealedHints);
+      } else if (res.hintText) {
+        setUnlockedHints((prev) => (prev.includes(res.hintText) ? prev : [...prev, res.hintText]));
+      } else if (res.session?.revealedHints) {
+        setUnlockedHints(res.session.revealedHints);
+      }
+
+      if (res.session?.score !== undefined) {
+        setCurrentScore(res.session.score);
+      } else if (res.penaltyCost) {
+        setCurrentScore((prev) => Math.max(0, prev - res.penaltyCost));
+      }
     } catch (err: any) {
-      console.warn('Hint error:', err.message);
+      console.warn('Hint request note:', err?.message || err);
     }
   };
 
