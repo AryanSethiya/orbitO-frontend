@@ -209,9 +209,10 @@ export default function App() {
           setIsSolvedOpen(false);
           setCurrentView('leaderboard');
         }}
-        sessionId={sessionId}
+        sessionId={sessionId || ''}
         finalScore={currentScore}
         guessesCount={guesses.length}
+        targetWord={guesses.find((g) => g.rank === 1)?.word || 'GALAXY'}
       />
     </div>
   );
