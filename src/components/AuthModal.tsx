@@ -2,7 +2,7 @@ import { useState, type FC } from 'react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { ApiClient } from '../api/client';
 import type { UserProfile } from '../types/game';
-import { X, Shield, AlertCircle, ArrowRight } from 'lucide-react';
+import { X, Shield, AlertCircle, User } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -28,9 +28,8 @@ function parseJwt(token: string) {
 }
 
 export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-  const [email, setEmail] = useState('');
-  const [pilotName, setPilotName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [customCallsign, setCustomCallsign] = useState('');
+  
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -42,18 +41,18 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
     }
 
     try {
-      setLoading(true);
+      
       setError(null);
       const payload = parseJwt(credentialResponse.credential);
-      const userEmail = payload?.email || email;
-      const userName = payload?.name || payload?.given_name || pilotName || 'Orbital Pilot';
-      const picture = payload?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userName)}`;
+      const userEmail = payload?.email;
+      const finalName = customCallsign.trim() || payload?.name || payload?.given_name || 'Orbital Pilot';
+      const picture = payload?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(finalName)}`;
       const googleId = payload?.sub;
 
       const res = await ApiClient.loginWithGoogle({
         credential: credentialResponse.credential,
         email: userEmail,
-        name: userName,
+        name: finalName,
         picture,
         googleId,
       });
@@ -67,37 +66,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
       console.error('Google login error:', err);
       setError(err.message || 'Google authentication failed. Please try again.');
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDirectGoogleLogin = async () => {
-    if (!email.trim()) {
-      setError('Please enter your Google email.');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const name = pilotName.trim() || email.split('@')[0];
-      const picture = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`;
-
-      const res = await ApiClient.loginWithGoogle({
-        email: email.trim().toLowerCase(),
-        name,
-        picture,
-      });
-
-      localStorage.setItem('orbito_auth_token', res.token);
-      localStorage.setItem('orbito_user', JSON.stringify(res.user));
-      localStorage.setItem('orbito_player_id', res.user.id);
-      onLoginSuccess(res.user);
-      onClose();
-    } catch (err: any) {
-      setError(err.message || 'Authentication failed');
-    } finally {
-      setLoading(false);
+      
     }
   };
 
@@ -116,22 +85,38 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
             <Shield className="w-5 h-5 text-[#00f0ff]" />
           </div>
           <div>
-            <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Pilot Authentication</h2>
-            <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Google OAuth 2.0 Access</p>
+            <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Pilot Verification</h2>
+            <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Strict Google OAuth 2.0</p>
           </div>
         </div>
 
         {error && (
-          <div className="p-3 mb-4 rounded-xl bg-[#ff5e07]/10 border border-[#ff5e07]/30 text-xs font-mono text-[#ff5e07] flex items-center gap-2">
+          <div className="p-3 mb-4 rounded-xl bg-[#ff5e07]/10 border border-[#ff5e07]/30 text-xs font-mono text-[#ff5e07] flex items-center gap-2 text-left">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* 1. Official Google Sign In Button */}
-        <div className="w-full flex flex-col items-center justify-center mb-4 bg-[#0c0c1f] p-4 rounded-2xl border border-[#00f0ff]/20">
+        {/* Optional Custom Pilot Callsign Input */}
+        <div className="text-left mb-4">
+          <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1.5 font-bold flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-[#00f0ff]" />
+            <span>Custom Pilot Callsign (Optional)</span>
+          </label>
+          <input
+            type="text"
+            value={customCallsign}
+            onChange={(e) => setCustomCallsign(e.target.value)}
+            placeholder="e.g. Commander Nova (leave empty for Google name)"
+            maxLength={30}
+            className="w-full bg-[#070714] border border-white/15 rounded-2xl px-3.5 py-2.5 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/40 focus:outline-none focus:border-[#00f0ff] transition-colors"
+          />
+        </div>
+
+        {/* Official Google OAuth Sign-In Button */}
+        <div className="w-full flex flex-col items-center justify-center bg-[#0c0c1f] p-4 rounded-2xl border border-[#00f0ff]/20">
           <label className="font-mono text-[10px] text-[#00f0ff] uppercase block mb-3 font-bold tracking-wider">
-            Sign in with Google Account
+            Authorize &amp; Launch with Google
           </label>
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
@@ -144,47 +129,9 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
           />
         </div>
 
-        <div className="flex items-center gap-3 my-4">
-          <div className="h-[1px] flex-1 bg-white/10" />
-          <span className="font-mono text-[10px] text-[#8080a0] uppercase">Or Quick Launch with Callsign</span>
-          <div className="h-[1px] flex-1 bg-white/10" />
-        </div>
-
-        {/* Callsign / Direct Sign-In fallback */}
-        <div className="flex flex-col gap-3 text-left">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1 font-semibold">Google Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="pilot@gmail.com"
-                className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/40 focus:outline-none focus:border-[#00f0ff]"
-              />
-            </div>
-            <div>
-              <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1 font-semibold">Pilot Callsign</label>
-              <input
-                type="text"
-                value={pilotName}
-                onChange={(e) => setPilotName(e.target.value)}
-                placeholder="StarVoyager"
-                className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/40 focus:outline-none focus:border-[#00f0ff]"
-              />
-            </div>
-          </div>
-
-          <button
-            id="launch-auth-btn"
-            onClick={handleDirectGoogleLogin}
-            disabled={loading}
-            className="w-full py-3 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider active:scale-95 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all flex items-center justify-center gap-2"
-          >
-            <span>{loading ? 'Authenticating...' : (pilotName.trim() ? `Launch as ${pilotName}` : 'Launch Mission')}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <p className="font-mono text-[9px] text-[#8080a0] mt-3.5 text-center">
+          🔒 Strict Google authentication prevents duplicate scoring and leaderboard spam.
+        </p>
       </div>
     </div>
   );
