@@ -1,7 +1,7 @@
 import { useState, useEffect, type FC } from 'react';
 import type { LeaderboardEntry, UserProfile } from '../types/game';
 import { ApiClient } from '../api/client';
-import { RefreshCw, KeyRound } from 'lucide-react';
+import { RefreshCw, Users, KeyRound, Trophy } from 'lucide-react';
 
 interface SpaceStandingsViewProps {
   user: UserProfile | null;
@@ -10,37 +10,29 @@ interface SpaceStandingsViewProps {
 }
 
 export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
+  user,
   onOpenCommunity,
   activeRoomCode,
 }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<string>(activeRoomCode ? `Room ${activeRoomCode}` : 'Global');
-  const [communities, setCommunities] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string>(activeRoomCode ? 'Room' : 'Global');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadCommunities();
-  }, []);
+    if (activeRoomCode) {
+      setActiveTab('Room');
+    }
+  }, [activeRoomCode]);
 
   useEffect(() => {
     loadStandings(activeTab);
-  }, [activeTab]);
-
-  const loadCommunities = async () => {
-    try {
-      const res = await ApiClient.getActiveCommunities();
-      setCommunities(res.communities || []);
-    } catch {}
-  };
+  }, [activeTab, activeRoomCode]);
 
   const loadStandings = async (tab: string) => {
     try {
       setLoading(true);
-      const isRoom = tab.startsWith('Room ');
-      const roomCode = isRoom ? tab.replace('Room ', '').trim() : undefined;
-      const commFilter = !isRoom && tab !== 'Global' ? tab : undefined;
-
-      const res = await ApiClient.getLeaderboard({ community: commFilter, roomCode });
+      const roomFilter = tab === 'Room' && activeRoomCode ? activeRoomCode : undefined;
+      const res = await ApiClient.getLeaderboard({ roomCode: roomFilter });
       setEntries(res.leaderboard || []);
     } catch (err) {
       console.error('Error loading leaderboard:', err);
@@ -48,6 +40,12 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
       setLoading(false);
     }
   };
+
+  const currentCommunityName = user?.community && user.community !== 'Global Explorers'
+    ? user.community
+    : activeRoomCode
+    ? `Room ${activeRoomCode}`
+    : null;
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-16 text-center">
@@ -60,51 +58,39 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+      {/* Clean Tab Switcher: Global & User's Custom Community Room */}
+      <div className="flex flex-wrap items-center justify-center gap-2.5 mb-8">
         <button
           onClick={() => setActiveTab('Global')}
-          className={`px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase transition-all ${
+          className={`px-5 py-2.5 rounded-2xl font-mono text-xs font-bold uppercase transition-all flex items-center gap-2 ${
             activeTab === 'Global'
-              ? 'bg-[#00f0ff] text-[#05050c] shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+              ? 'bg-[#00f0ff] text-[#05050c] shadow-[0_0_20px_rgba(0,240,255,0.4)]'
               : 'bg-[#070714] text-[#8080a0] hover:text-[#eef2ff] border border-white/10'
           }`}
         >
-          🌐 Global
+          <span>🌐 Global Standings</span>
         </button>
 
-        {activeRoomCode && (
+        {currentCommunityName && (
           <button
-            onClick={() => setActiveTab(`Room ${activeRoomCode}`)}
-            className={`px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase transition-all ${
-              activeTab === `Room ${activeRoomCode}`
-                ? 'bg-[#00f0ff] text-[#05050c] shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+            onClick={() => setActiveTab('Room')}
+            className={`px-5 py-2.5 rounded-2xl font-mono text-xs font-bold uppercase transition-all flex items-center gap-2 ${
+              activeTab === 'Room'
+                ? 'bg-[#00f0ff] text-[#05050c] shadow-[0_0_20px_rgba(0,240,255,0.4)]'
                 : 'bg-[#070714] text-[#00f0ff] hover:text-[#eef2ff] border border-[#00f0ff]/30'
             }`}
           >
-            🛸 Room {activeRoomCode}
+            <Users className="w-3.5 h-3.5" />
+            <span>🛸 ${currentCommunityName}</span>
           </button>
         )}
 
-        {communities.map((c) => (
-          <button
-            key={c}
-            onClick={() => setActiveTab(c)}
-            className={`px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase transition-all ${
-              activeTab === c
-                ? 'bg-[#00f0ff] text-[#05050c] shadow-[0_0_15px_rgba(0,240,255,0.4)]'
-                : 'bg-[#070714] text-[#8080a0] hover:text-[#eef2ff] border border-white/10'
-            }`}
-          >
-            {c}
-          </button>
-        ))}
-
         <button
           onClick={onOpenCommunity}
-          className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-[#8080a0] hover:text-[#00f0ff] font-mono text-xs font-bold uppercase transition-all flex items-center gap-1.5"
+          className="px-4 py-2.5 rounded-2xl bg-white/5 border border-white/15 text-[#8080a0] hover:text-[#00f0ff] hover:border-[#00f0ff]/40 font-mono text-xs font-bold uppercase transition-all flex items-center gap-2"
         >
-          <KeyRound className="w-3.5 h-3.5" />
-          <span>+ Join/Create Room</span>
+          <KeyRound className="w-3.5 h-3.5 text-[#00f0ff]" />
+          <span>{currentCommunityName ? 'Switch / Join Room' : '+ Join / Create Community Room'}</span>
         </button>
       </div>
 
@@ -114,9 +100,9 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
             <tr className="border-b border-white/10 text-[#8080a0] uppercase text-[10px]">
               <th className="py-3 px-3 text-left">Rank</th>
               <th className="py-3 px-3 text-left">Pilot</th>
-              <th className="py-3 px-3 text-left">Fleet / Room</th>
+              <th className="py-3 px-3 text-left">Community Fleet</th>
               <th className="py-3 px-3 text-center">Probes</th>
-              <th className="py-3 px-3 text-right">Holding Score</th>
+              <th className="py-3 px-3 text-right">Final Score</th>
             </tr>
           </thead>
           <tbody>
@@ -129,7 +115,11 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
             ) : entries.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-16 text-center text-[#8080a0]">
-                  No pilots have completed today's orbit in this standings category yet.
+                  <div className="max-w-sm mx-auto flex flex-col items-center gap-2">
+                    <Trophy className="w-8 h-8 text-[#8080a0]/40" />
+                    <p className="font-bold text-[#eef2ff]">No Pilots Ranked Yet</p>
+                    <p className="text-[11px] text-[#8080a0]">Be the first astronaut to solve today's orbit in this leaderboard!</p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -164,7 +154,7 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
                   </td>
 
                   <td className="py-3.5 px-3">
-                    <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-[#00f0ff]">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#00f0ff]/10 border border-[#00f0ff]/20 text-[10px] text-[#00f0ff] font-bold">
                       {entry.community}
                     </span>
                   </td>
