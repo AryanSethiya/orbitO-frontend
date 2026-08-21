@@ -30,7 +30,6 @@ function parseJwt(token: string) {
 export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
   const [email, setEmail] = useState('aryansethiya111@gmail.com');
   const [pilotName, setPilotName] = useState('Aryan Sethiya');
-  const [community, setCommunity] = useState('Starfleet Academy');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +56,6 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
         name: userName,
         picture,
         googleId,
-        community,
       });
 
       localStorage.setItem('orbito_auth_token', res.token);
@@ -89,7 +87,6 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
         email: email.trim().toLowerCase(),
         name,
         picture,
-        community,
       });
 
       localStorage.setItem('orbito_auth_token', res.token);
@@ -114,13 +111,13 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 rounded-full bg-[#00f0ff]/20 border border-[#00f0ff] flex items-center justify-center">
             <Shield className="w-5 h-5 text-[#00f0ff]" />
           </div>
           <div>
             <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Pilot Authentication</h2>
-            <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Google OAuth 2.0 &amp; Fleet Access</p>
+            <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Google OAuth 2.0 Access</p>
           </div>
         </div>
 
@@ -131,26 +128,10 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
           </div>
         )}
 
-        {/* Community / Fleet selector */}
-        <div className="mb-5 text-left">
-          <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1 font-semibold">1. Select Your Fleet / Community</label>
-          <select
-            value={community}
-            onChange={(e) => setCommunity(e.target.value)}
-            className="w-full bg-[#070714] border border-white/15 rounded-xl px-3 py-2.5 text-xs font-mono text-[#00f0ff] focus:outline-none focus:border-[#00f0ff]"
-          >
-            <option value="Starfleet Academy">🚀 Starfleet Academy</option>
-            <option value="Nebula Squad">🌌 Nebula Squad</option>
-            <option value="Cosmic Voyagers">🛸 Cosmic Voyagers</option>
-            <option value="Astrophysicists">🔭 Astrophysicists</option>
-            <option value="Global Explorers">🧭 Global Explorers</option>
-          </select>
-        </div>
-
-        {/* 2. Official Google Sign In Button */}
-        <div className="w-full flex flex-col items-center justify-center my-3 bg-[#0c0c1f] p-4 rounded-2xl border border-[#00f0ff]/20">
+        {/* 1. Official Google Sign In Button */}
+        <div className="w-full flex flex-col items-center justify-center mb-4 bg-[#0c0c1f] p-4 rounded-2xl border border-[#00f0ff]/20">
           <label className="font-mono text-[10px] text-[#00f0ff] uppercase block mb-3 font-bold tracking-wider">
-            2. Sign in with Google Account
+            Sign in with Google Account
           </label>
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
@@ -165,12 +146,12 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
 
         <div className="flex items-center gap-3 my-4">
           <div className="h-[1px] flex-1 bg-white/10"></div>
-          <span className="font-mono text-[10px] text-[#8080a0] uppercase">Or Quick Launch as Callsign</span>
+          <span className="font-mono text-[10px] text-[#8080a0] uppercase">Or Quick Launch with Callsign</span>
           <div className="h-[1px] flex-1 bg-white/10"></div>
         </div>
 
         {/* Callsign / Direct Sign-In fallback */}
-        <div className="flex flex-col gap-2.5 text-left">
+        <div className="flex flex-col gap-3 text-left">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1">Google Email</label>
@@ -179,17 +160,17 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@gmail.com"
-                className="w-full bg-[#070714] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-mono text-[#eef2ff] focus:outline-none focus:border-[#00f0ff]"
+                className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] focus:outline-none focus:border-[#00f0ff]"
               />
             </div>
             <div>
-              <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1">Pilot Name</label>
+              <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1">Pilot Callsign</label>
               <input
                 type="text"
                 value={pilotName}
                 onChange={(e) => setPilotName(e.target.value)}
                 placeholder="Aryan Sethiya"
-                className="w-full bg-[#070714] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-mono text-[#eef2ff] focus:outline-none focus:border-[#00f0ff]"
+                className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] focus:outline-none focus:border-[#00f0ff]"
               />
             </div>
           </div>
@@ -198,13 +179,12 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
             id="launch-auth-btn"
             onClick={handleDirectGoogleLogin}
             disabled={loading}
-            className="w-full py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-[#eef2ff] font-mono text-xs font-bold uppercase tracking-wider active:scale-95 transition-all flex items-center justify-center gap-2 border border-white/10"
+            className="w-full py-3 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider active:scale-95 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all flex items-center justify-center gap-2"
           >
             <span>Launch as {pilotName || 'Pilot'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
-
       </div>
     </div>
   );
