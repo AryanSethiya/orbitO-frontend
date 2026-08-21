@@ -107,6 +107,13 @@ export class ApiClient {
     });
   }
 
+  static async updateProfile(userId: string, name: string) {
+    return this.request<{ success: boolean; user: UserProfile }>('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ userId, name }),
+    });
+  }
+
   static async getMe() {
     return this.request<UserProfile>('/auth/me');
   }
