@@ -1,150 +1,184 @@
 import { useState, useEffect, type FC } from 'react';
-import type { ScoreBreakdown, AIRoast } from '../types/game';
-import { Share2, Trophy, Loader2, Sparkles, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ApiClient } from '../api/client';
+import { Trophy, Share2, Clock, Check, Terminal, X } from 'lucide-react';
 
 interface OrbitSolvedModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onOpenStandings: () => void;
+  sessionId: string;
+  finalScore: number;
   guessesCount: number;
-  scoreBreakdown?: ScoreBreakdown | null;
-  hintsUsed: number;
-  roast: AIRoast | null;
-  onGenerateRoast: (style: 'friendly' | 'savage' | 'hype') => void;
-  loadingRoast: boolean;
-  onViewStandings: () => void;
+  targetWord?: string;
 }
 
 export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
+  isOpen,
+  onClose,
+  onOpenStandings,
+  sessionId,
+  finalScore,
   guessesCount,
-  scoreBreakdown,
-  hintsUsed,
-  roast,
-  onGenerateRoast,
-  loadingRoast,
-  onViewStandings,
+  targetWord = 'TODAY TARGET',
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [streamedRoast, setStreamedRoast] = useState<string>('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [roastStyle, setRoastStyle] = useState<'playful' | 'savage' | 'hype'>('playful');
   const [countdown, setCountdown] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setUTCHours(24, 0, 0, 0);
-      const diff = tomorrow.getTime() - now.getTime();
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diff % (1000 * 60)) / 1000);
-      setCountdown(`${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+      const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+      const diff = Math.max(0, tomorrow.getTime() - now.getTime());
+      const hours = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+      const mins = Math.floor((diff / (1000 * 60)) % 60).toString().padStart(2, '0');
+      const secs = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+      setCountdown(`${hours}:${mins}:${secs}`);
     };
+
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (isOpen && sessionId) {
+      fetchRoast(roastStyle);
+    }
+  }, [isOpen, sessionId]);
+
+  const fetchRoast = async (style: 'playful' | 'savage' | 'hype') => {
+    try {
+      const res = await ApiClient.generateRoast(sessionId, style);
+      streamText(res.roastText);
+    } catch {
+      const fallback = `You locked onto the center target in ${guessesCount} probes with a final score of ${finalScore} pts. Witty orbit maneuvering!`;
+      streamText(fallback);
+    }
+  };
+
+  const streamText = (fullText: string) => {
+    setIsStreaming(true);
+    setStreamedRoast('');
+    let idx = 0;
+    const timer = setInterval(() => {
+      if (idx < fullText.length) {
+        setStreamedRoast(fullText.slice(0, idx + 1));
+        idx++;
+      } else {
+        clearInterval(timer);
+        setIsStreaming(false);
+      }
+    }, 20);
+  };
+
+  if (!isOpen) return null;
+
   const handleShare = () => {
-    const text = `🌌 ORBITO DAILY PUZZLE SOLVED!\n🎯 Guesses: ${guessesCount}\n💡 Hints: ${hintsUsed}\n🏆 Score: ${scoreBreakdown?.finalScore || 1000}/1000\n\nPlay today's orbit: http://localhost:5173`;
+    const text = `🛰️ Orbito // Orbit Solved!
+🎯 Score: ${finalScore} pts | ${guessesCount} Probes
+🪐 Play today's semantic puzzle: https://orbito-backend-zacg.onrender.com`;
     navigator.clipboard.writeText(text);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative z-10 w-full">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg stitch-solved-card rounded-3xl p-6 sm:p-8 border border-[#ff9d00]/30 shadow-2xl relative flex flex-col items-center text-center"
-      >
-        {/* Solved Title with Amber Glow */}
-        <h1 className="font-mono text-4xl sm:text-5xl font-bold tracking-tight text-[#ff9d00] mb-1 drop-shadow-[0_0_20px_rgba(255,157,0,0.4)]">
-          SOLVED!
-        </h1>
-        <p className="font-mono text-xs text-[#8080a0] uppercase tracking-widest mb-4">
-          in {guessesCount} {guessesCount === 1 ? 'guess' : 'guesses'}
+    <div className="fixed inset-0 bg-[#05050c]/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg stitch-card rounded-3xl p-6 sm:p-8 border border-[#00ff88]/30 relative shadow-[0_0_50px_rgba(0,255,136,0.15)] text-center">
+        <button
+          onClick={onClose}
+          className="absolute right-5 top-5 text-[#8080a0] hover:text-[#eef2ff] transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <img 
+          src="/logo.png" 
+          alt="oRBITO Logo" 
+          className="h-12 w-auto mx-auto mb-3 filter drop-shadow-[0_0_15px_rgba(0,240,255,0.6)]"
+          onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+        />
+
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00ff88]/10 border border-[#00ff88]/30 font-mono text-xs text-[#00ff88] font-bold uppercase tracking-widest mb-3">
+          <Trophy className="w-3.5 h-3.5" />
+          Orbit Solved
+        </div>
+
+        <h2 className="font-mono text-xl sm:text-2xl font-black text-[#eef2ff] uppercase tracking-wider">
+          Center Target Acquired!
+        </h2>
+        <p className="font-mono text-xs text-[#00f0ff] uppercase tracking-widest mt-1 font-bold">
+          Target: {targetWord}
         </p>
 
-        {/* AI Roast Terminal Card */}
-        <div className="w-full stitch-terminal rounded-2xl p-4 sm:p-5 border border-white/10 mb-5 text-left relative overflow-hidden">
-          <div className="flex justify-between items-center pb-2 border-b border-white/5 mb-3">
-            <span className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider flex items-center gap-1.5 font-bold">
-              <Sparkles className="w-3 h-3 text-[#00f0ff]" />
-              [&gt;] SYSTEM_ANALYSIS // AI_ROAST
+        <div className="grid grid-cols-2 gap-3 my-5">
+          <div className="p-3.5 rounded-2xl bg-[#070714] border border-white/10">
+            <span className="font-mono text-[10px] text-[#8080a0] uppercase block">Final Score</span>
+            <span className="font-mono text-2xl font-black text-[#00ff88]">{finalScore}</span>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-[#070714] border border-white/10">
+            <span className="font-mono text-[10px] text-[#8080a0] uppercase block">Total Probes</span>
+            <span className="font-mono text-2xl font-black text-[#00f0ff]">{guessesCount}</span>
+          </div>
+        </div>
+
+        {/* Live Streaming AI Roast Terminal */}
+        <div className="text-left rounded-2xl bg-[#070714] border border-[#00f0ff]/25 p-4 mb-5 shadow-inner">
+          <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-white/5">
+            <span className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider font-bold flex items-center gap-1.5">
+              <Terminal className="w-3.5 h-3.5" />
+              Deep Space Neural Roast // Gemini 3.5
             </span>
 
-            {/* Style Switcher */}
-            <div className="flex gap-1.5">
-              {(['savage', 'friendly', 'hype'] as const).map((style) => (
+            <div className="flex gap-1">
+              {(['playful', 'savage', 'hype'] as const).map((s) => (
                 <button
-                  key={style}
-                  onClick={() => onGenerateRoast(style)}
-                  disabled={loadingRoast}
-                  className="font-mono text-[9px] uppercase px-2 py-0.5 rounded bg-white/5 hover:bg-white/15 text-[#8080a0] hover:text-[#eef2ff] transition-all disabled:opacity-50"
+                  key={s}
+                  onClick={() => { setRoastStyle(s); fetchRoast(s); }}
+                  className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase font-bold transition-all ${
+                    roastStyle === s ? 'bg-[#00f0ff] text-[#05050c]' : 'text-[#8080a0] hover:text-[#eef2ff]'
+                  }`}
                 >
-                  {style}
+                  {s}
                 </button>
               ))}
             </div>
           </div>
 
-          {loadingRoast ? (
-            <div className="py-4 flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 text-[#00f0ff] animate-spin" />
-              <span className="font-mono text-xs text-[#00f0ff]">Generating neural reaction...</span>
-            </div>
-          ) : (
-            <p className="font-mono text-xs text-[#eef2ff] leading-relaxed italic">
-              "{roast?.roastText || 'Orbital target acquired with surgical precision. Trajectory locked in record time.'}"
-            </p>
-          )}
+          <p className="font-mono text-xs text-[#eef2ff] leading-relaxed min-h-[50px]">
+            {streamedRoast}
+            {isStreaming && <span className="inline-block w-2 h-3.5 bg-[#00f0ff] ml-1 animate-pulse" />}
+          </p>
         </div>
 
-        {/* Share Button */}
-        <button
-          onClick={handleShare}
-          className="w-full py-3.5 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider hover:shadow-[0_0_25px_rgba(0,240,255,0.6)] active:scale-95 transition-all flex items-center justify-center gap-2 mb-5"
-        >
-          <Share2 className="w-4 h-4" />
-          <span>{copied ? 'TELEMETRY COPIED!' : 'SHARE ORBIT TELEMETRY >'}</span>
-        </button>
-
-        {/* 3 Metric Pods */}
-        <div className="w-full grid grid-cols-3 gap-2.5 mb-5">
-          <div className="stitch-card rounded-xl p-3 border border-white/5 flex flex-col items-center">
-            <span className="font-mono text-[9px] text-[#8080a0] uppercase">Score</span>
-            <span className="font-mono text-base font-bold text-[#00f0ff]">
-              {scoreBreakdown?.finalScore || 1000}
-            </span>
-          </div>
-
-          <div className="stitch-card rounded-xl p-3 border border-white/5 flex flex-col items-center">
-            <span className="font-mono text-[9px] text-[#8080a0] uppercase">Time</span>
-            <span className="font-mono text-base font-bold text-[#eef2ff]">02:14</span>
-          </div>
-
-          <div className="stitch-card rounded-xl p-3 border border-white/5 flex flex-col items-center">
-            <span className="font-mono text-[9px] text-[#8080a0] uppercase">Hints Used</span>
-            <span className="font-mono text-base font-bold text-[#ff9d00]">{hintsUsed}</span>
-          </div>
+        <div className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10 font-mono text-xs text-[#8080a0] mb-5">
+          <Clock className="w-4 h-4 text-[#00f0ff]" />
+          <span>Next Daily Orbit in:</span>
+          <span className="font-bold text-[#eef2ff]">{countdown}</span>
         </div>
 
-        {/* Action: Space Standings & Midnight Countdown (One-Play Rule) */}
-        <div className="w-full flex flex-col gap-2.5">
+        <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={onViewStandings}
-            className="w-full py-3 px-4 rounded-xl border border-white/10 bg-[#070714] text-[#eef2ff] font-mono text-xs font-bold uppercase tracking-wider hover:border-[#00f0ff] hover:text-[#00f0ff] transition-all flex items-center justify-center gap-2"
+            onClick={handleShare}
+            className="py-3 rounded-xl bg-white/10 hover:bg-white/20 text-[#eef2ff] font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 border border-white/10"
           >
-            <Trophy className="w-4 h-4 text-[#ff9d00]" />
-            <span>View Space Standings</span>
+            {copied ? <Check className="w-4 h-4 text-[#00ff88]" /> : <Share2 className="w-4 h-4" />}
+            <span>{copied ? 'Copied!' : 'Share Score'}</span>
           </button>
 
-          <div className="py-2 px-3 rounded-xl bg-[#0c0c1f] border border-white/5 flex items-center justify-center gap-2 text-center">
-            <Clock className="w-3.5 h-3.5 text-[#00f0ff]" />
-            <span className="font-mono text-[10px] text-[#8080a0]">
-              Next Daily Orbit in <strong className="text-[#00f0ff]">{countdown}</strong>
-            </span>
-          </div>
+          <button
+            onClick={onOpenStandings}
+            className="py-3 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <Trophy className="w-4 h-4" />
+            <span>Standings</span>
+          </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

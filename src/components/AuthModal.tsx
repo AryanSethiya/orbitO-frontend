@@ -195,6 +195,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
           </div>
 
           <button
+            id="launch-auth-btn"
             onClick={handleDirectGoogleLogin}
             disabled={loading}
             className="w-full py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-[#eef2ff] font-mono text-xs font-bold uppercase tracking-wider active:scale-95 transition-all flex items-center justify-center gap-2 border border-white/10"

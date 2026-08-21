@@ -1,106 +1,131 @@
-import type { SessionSummary, GuessResult, HintResult, AIRoast, LeaderboardResponse, UserProfile } from '../types/game';
+import type { GuessResponse, HintResponse, RoastResponse, LeaderboardResponse, UserProfile } from '../types/game';
 
-const RAW_URL = import.meta.env.VITE_API_URL || 'https://orbito-backend-zacg.onrender.com';
+const LOCAL_URL = 'http://127.0.0.1:3000';
+const PROD_URL = import.meta.env.VITE_API_URL || 'https://orbito-backend-zacg.onrender.com';
+
+// Primary URL defaults to local when developing locally, with graceful fallback
+const RAW_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? LOCAL_URL : PROD_URL;
 const BASE_URL = RAW_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export class ApiClient {
-  private static getAuthToken(): string | null {
-    return localStorage.getItem('orbito_auth_token');
-  }
-
-  private static async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const cleanPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const targetUrl = `${BASE_URL}/api/v1${cleanPath}`;
-    const token = this.getAuthToken();
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string>),
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+  private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${BASE_URL}/api/v1${endpoint}`;
+    const token = localStorage.getItem('orbito_auth_token');
+    
+    const headers = new Headers(options.headers || {});
+    if (!headers.has('Content-Type') && options.method !== 'GET') {
+      headers.set('Content-Type', 'application/json');
+    }
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
     }
 
-    const res = await fetch(targetUrl, {
-      ...options,
-      headers,
-    });
-
-    if (!res.ok) {
-      let errorMsg = 'HTTP Error ' + res.status;
-      try {
-        const errorData = await res.json();
-        errorMsg = errorData.message || errorData.error || errorMsg;
-      } catch {}
-      throw new Error(errorMsg);
+    try {
+      const res = await fetch(url, { ...options, headers });
+      if (!res.ok) {
+        let errMessage = `Request failed with status ${res.status}`;
+        try {
+          const body = await res.json();
+          errMessage = body.message || errMessage;
+        } catch {}
+        throw new Error(errMessage);
+      }
+      return (await res.json()) as T;
+    } catch (err: any) {
+      // If local request failed and we are not already on prod, try prod fallback
+      if (BASE_URL === LOCAL_URL) {
+        try {
+          const fallbackUrl = `${PROD_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api/v1${endpoint}`;
+          const res = await fetch(fallbackUrl, { ...options, headers });
+          if (res.ok) return (await res.json()) as T;
+        } catch {}
+      }
+      throw err;
     }
-
-    return res.json();
   }
 
-  static async loginWithGoogle(credentialOrData: { credential?: string; email?: string; name?: string; picture?: string; googleId?: string; community?: string }): Promise<{ user: UserProfile; token: string }> {
-    return this.request<{ user: UserProfile; token: string }>('/auth/google', {
+  static async getTodayPuzzle() {
+    return this.request<{ id: string; date: string; hints?: [string, string, string] }>('/puzzles/today');
+  }
+
+  static async startSession(userId?: string) {
+    return this.request<{ sessionId: string; puzzleId: string; date: string; solved?: boolean; score?: number; guesses?: any[]; revealedHints?: string[] }>('/sessions', {
       method: 'POST',
-      body: JSON.stringify(credentialOrData),
+      body: JSON.stringify({ userId }),
     });
   }
 
-  static async devLogin(callsign: string, community = 'Global Explorers', avatarUrl?: string): Promise<{ user: UserProfile; token: string }> {
-    return this.request<{ user: UserProfile; token: string }>('/auth/dev-login', {
+  static async getSession(sessionId: string) {
+    return this.request<any>(`/sessions/${sessionId}`);
+  }
+
+  static async submitGuess(sessionId: string, guess: string) {
+    return this.request<GuessResponse>(`/sessions/${sessionId}/guess`, {
       method: 'POST',
-      body: JSON.stringify({ callsign, community, avatarUrl }),
+      body: JSON.stringify({ guess }),
     });
   }
 
-  static async getMe(): Promise<UserProfile> {
-    return this.request<UserProfile>('/auth/me');
-  }
-
-  static async updateCommunity(userId: string, community: string): Promise<{ success: boolean; community: string }> {
-    return this.request<{ success: boolean; community: string }>('/auth/community', {
-      method: 'PATCH',
-      body: JSON.stringify({ userId, community }),
-    });
-  }
-
-  static async startSession(userId?: string): Promise<SessionSummary> {
-    const payload = userId ? { userId } : {};
-    return this.request<SessionSummary>('/sessions', {
+  static async requestHint(sessionId: string, hintIndex?: number) {
+    return this.request<HintResponse>(`/sessions/${sessionId}/hints`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ hintIndex }),
     });
   }
 
-  static async submitGuess(sessionId: string, guess: string): Promise<GuessResult> {
-    return this.request<GuessResult>(`/sessions/${sessionId}/guess`, {
-      method: 'POST',
-      body: JSON.stringify({ guess: guess.trim().toLowerCase() }),
-    });
-  }
-
-  static async requestHint(sessionId: string): Promise<HintResult> {
-    return this.request<HintResult>(`/sessions/${sessionId}/hints`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
-  }
-
-  static async generateRoast(sessionId: string, style: 'friendly' | 'savage' | 'hype' | 'balanced' = 'savage'): Promise<AIRoast> {
-    return this.request<AIRoast>(`/sessions/${sessionId}/roast`, {
+  static async generateRoast(sessionId: string, style: 'savage' | 'playful' | 'hype' = 'playful') {
+    return this.request<RoastResponse>(`/sessions/${sessionId}/roast`, {
       method: 'POST',
       body: JSON.stringify({ style }),
     });
   }
 
-  static async getDailyLeaderboard(community?: string): Promise<LeaderboardResponse> {
-    const query = community && community !== 'Global' && community !== 'All' 
-      ? `?community=${encodeURIComponent(community)}` 
-      : '';
-    return this.request<LeaderboardResponse>(`/leaderboards/daily${query}`);
+  static async getLeaderboard(params?: { date?: string; limit?: number; community?: string; roomCode?: string }) {
+    const query = new URLSearchParams();
+    if (params?.date) query.set('date', params.date);
+    if (params?.limit) query.set('limit', params.limit.toString());
+    if (params?.community && params.community !== 'Global') query.set('community', params.community);
+    if (params?.roomCode) query.set('roomCode', params.roomCode);
+    return this.request<LeaderboardResponse>(`/leaderboards/daily?${query.toString()}`);
   }
 
-  static async getCommunities(): Promise<{ communities: string[] }> {
+  static async getActiveCommunities() {
     return this.request<{ communities: string[] }>('/leaderboards/communities');
+  }
+
+  static async loginWithGoogle(payload: { credential?: string; email?: string; name?: string; picture?: string; googleId?: string; community?: string }) {
+    return this.request<{ token: string; user: UserProfile }>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  static async devLogin(callsign: string, community?: string) {
+    return this.request<{ token: string; user: UserProfile }>('/auth/dev-login', {
+      method: 'POST',
+      body: JSON.stringify({ callsign, community }),
+    });
+  }
+
+  static async getMe() {
+    return this.request<UserProfile>('/auth/me');
+  }
+
+  static async createCommunityRoom(name: string, creatorId: string) {
+    return this.request<{ room: { id: string; code: string; name: string; createdAt: string } }>('/communities/create', {
+      method: 'POST',
+      body: JSON.stringify({ name, creatorId }),
+    });
+  }
+
+  static async joinCommunityRoom(code: string, userId: string) {
+    return this.request<{ message: string; room: { id: string; code: string; name: string } }>('/communities/join', {
+      method: 'POST',
+      body: JSON.stringify({ code, userId }),
+    });
+  }
+
+  static async getUserRooms(userId: string) {
+    return this.request<{ rooms: Array<{ id: string; code: string; name: string; createdAt: string; joinedAt: string }> }>(`/communities/user/${userId}`);
   }
 }

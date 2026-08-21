@@ -1,140 +1,187 @@
 import { useState, useEffect, type FC } from 'react';
+import type { LeaderboardEntry, UserProfile } from '../types/game';
 import { ApiClient } from '../api/client';
-import type { LeaderboardEntry } from '../types/game';
-import { Users, Globe, Trophy, Loader2 } from 'lucide-react';
+import { RefreshCw, KeyRound } from 'lucide-react';
 
-export const SpaceStandingsView: FC = () => {
-  const [activeCommunity, setActiveCommunity] = useState<string>('Global');
-  const [communities, setCommunities] = useState<string[]>(['Global', 'Starfleet Academy', 'Nebula Squad', 'Cosmic Voyagers', 'Astrophysicists']);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+interface SpaceStandingsViewProps {
+  user: UserProfile | null;
+  onOpenCommunity: () => void;
+  activeRoomCode?: string | null;
+}
+
+export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
+  onOpenCommunity,
+  activeRoomCode,
+}) => {
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [activeTab, setActiveTab] = useState<string>(activeRoomCode ? `Room ${activeRoomCode}` : 'Global');
+  const [communities, setCommunities] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchStandings = async (communityName: string) => {
+  useEffect(() => {
+    loadCommunities();
+  }, []);
+
+  useEffect(() => {
+    loadStandings(activeTab);
+  }, [activeTab]);
+
+  const loadCommunities = async () => {
+    try {
+      const res = await ApiClient.getActiveCommunities();
+      setCommunities(res.communities || []);
+    } catch {}
+  };
+
+  const loadStandings = async (tab: string) => {
     try {
       setLoading(true);
-      const res = await ApiClient.getDailyLeaderboard(communityName);
-      setLeaderboard(res.leaderboard || []);
+      const isRoom = tab.startsWith('Room ');
+      const roomCode = isRoom ? tab.replace('Room ', '').trim() : undefined;
+      const commFilter = !isRoom && tab !== 'Global' ? tab : undefined;
+
+      const res = await ApiClient.getLeaderboard({ community: commFilter, roomCode });
+      setEntries(res.leaderboard || []);
     } catch (err) {
-      console.error('Failed to load standings:', err);
+      console.error('Error loading leaderboard:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    ApiClient.getCommunities().then((res) => {
-      if (res.communities && res.communities.length > 0) {
-        setCommunities(['Global', ...res.communities.filter((c) => c !== 'Global')]);
-      }
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetchStandings(activeCommunity);
-  }, [activeCommunity]);
-
   return (
-    <div className="w-full max-w-4xl mx-auto pt-24 pb-16 px-4 md:px-8 relative z-10 flex flex-col items-center">
-      
-      {/* Title */}
-      <h1 className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-[#eef2ff] text-center mb-1">
-        Space Standings
-      </h1>
-      <p className="font-mono text-xs text-[#00f0ff] uppercase tracking-widest text-center mb-6">
-        REAL-TIME LEADERBOARDS // TODAY'S ORBIT
-      </p>
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-16 text-center">
+      <div className="mb-8">
+        <h1 className="font-mono text-2xl sm:text-4xl font-black text-[#eef2ff] uppercase tracking-wider">
+          Space Standings
+        </h1>
+        <p className="font-mono text-xs text-[#00f0ff] uppercase tracking-widest mt-1 font-bold">
+          Real-Time Leaderboards // Today's Orbit
+        </p>
+      </div>
 
-      {/* Community / Fleet Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-2 mb-6 scrollbar-none">
-        {communities.map((comm) => (
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+        <button
+          onClick={() => setActiveTab('Global')}
+          className={`px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase transition-all ${
+            activeTab === 'Global'
+              ? 'bg-[#00f0ff] text-[#05050c] shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+              : 'bg-[#070714] text-[#8080a0] hover:text-[#eef2ff] border border-white/10'
+          }`}
+        >
+          🌐 Global
+        </button>
+
+        {activeRoomCode && (
           <button
-            key={comm}
-            onClick={() => setActiveCommunity(comm)}
-            className={`py-1.5 px-4 rounded-full font-mono text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              activeCommunity === comm
+            onClick={() => setActiveTab(`Room ${activeRoomCode}`)}
+            className={`px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase transition-all ${
+              activeTab === `Room ${activeRoomCode}`
                 ? 'bg-[#00f0ff] text-[#05050c] shadow-[0_0_15px_rgba(0,240,255,0.4)]'
-                : 'bg-[#0c0c1f] text-[#8080a0] border border-white/5 hover:border-white/20 hover:text-[#eef2ff]'
+                : 'bg-[#070714] text-[#00f0ff] hover:text-[#eef2ff] border border-[#00f0ff]/30'
             }`}
           >
-            {comm === 'Global' ? <Globe className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
-            <span>{comm}</span>
+            🛸 Room {activeRoomCode}
+          </button>
+        )}
+
+        {communities.map((c) => (
+          <button
+            key={c}
+            onClick={() => setActiveTab(c)}
+            className={`px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase transition-all ${
+              activeTab === c
+                ? 'bg-[#00f0ff] text-[#05050c] shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+                : 'bg-[#070714] text-[#8080a0] hover:text-[#eef2ff] border border-white/10'
+            }`}
+          >
+            {c}
           </button>
         ))}
+
+        <button
+          onClick={onOpenCommunity}
+          className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-[#8080a0] hover:text-[#00f0ff] font-mono text-xs font-bold uppercase transition-all flex items-center gap-1.5"
+        >
+          <KeyRound className="w-3.5 h-3.5" />
+          <span>+ Join/Create Room</span>
+        </button>
       </div>
 
-      {/* Leaderboard Table Card */}
-      <div className="w-full stitch-card rounded-2xl p-6 border border-white/5 overflow-hidden">
-        {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-6 h-6 text-[#00f0ff] animate-spin" />
-            <span className="font-mono text-xs text-[#00f0ff] tracking-widest">
-              QUERYING ORBITAL TELEMETRY...
-            </span>
-          </div>
-        ) : leaderboard.length === 0 ? (
-          <div className="py-20 text-center flex flex-col items-center justify-center gap-2">
-            <Trophy className="w-8 h-8 text-[#8080a0]/40" />
-            <p className="font-mono text-sm text-[#8080a0]">No completed orbits recorded in {activeCommunity} yet today.</p>
-            <p className="font-mono text-xs text-[#00f0ff]">Be the first pilot to solve today's puzzle and claim Rank #1!</p>
-          </div>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-left font-mono text-xs">
-              <thead>
-                <tr className="text-[#8080a0] uppercase border-b border-white/5 tracking-wider pb-3">
-                  <th className="pb-3 px-3 font-semibold">Rank</th>
-                  <th className="pb-3 px-3 font-semibold">Pilot</th>
-                  <th className="pb-3 px-3 font-semibold">Community</th>
-                  <th className="pb-3 px-3 font-semibold text-center">Probes</th>
-                  <th className="pb-3 px-3 font-semibold text-right">Holding Score</th>
+      <div className="stitch-card rounded-3xl p-4 sm:p-6 border border-white/10 text-left overflow-x-auto shadow-2xl">
+        <table className="w-full font-mono text-xs">
+          <thead>
+            <tr className="border-b border-white/10 text-[#8080a0] uppercase text-[10px]">
+              <th className="py-3 px-3 text-left">Rank</th>
+              <th className="py-3 px-3 text-left">Pilot</th>
+              <th className="py-3 px-3 text-left">Fleet / Room</th>
+              <th className="py-3 px-3 text-center">Probes</th>
+              <th className="py-3 px-3 text-right">Holding Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="py-16 text-center text-[#8080a0]">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#00f0ff]" />
+                </td>
+              </tr>
+            ) : entries.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-16 text-center text-[#8080a0]">
+                  No pilots have completed today's orbit in this standings category yet.
+                </td>
+              </tr>
+            ) : (
+              entries.map((entry, idx) => (
+                <tr
+                  key={entry.userId || idx}
+                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                >
+                  <td className="py-3.5 px-3">
+                    <span className={`font-black ${
+                      idx === 0
+                        ? 'text-[#00ff88]'
+                        : idx === 1
+                        ? 'text-[#00f0ff]'
+                        : idx === 2
+                        ? 'text-[#ffaa00]'
+                        : 'text-[#8080a0]'
+                    }`}>
+                      {idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
+                    </span>
+                  </td>
+
+                  <td className="py-3.5 px-3">
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={entry.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(entry.name || entry.username)}`}
+                        alt="Pilot Avatar"
+                        className="w-7 h-7 rounded-full border border-white/20 bg-black/40 object-cover"
+                      />
+                      <span className="font-bold text-[#eef2ff]">{entry.name || entry.username}</span>
+                    </div>
+                  </td>
+
+                  <td className="py-3.5 px-3">
+                    <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-[#00f0ff]">
+                      {entry.community}
+                    </span>
+                  </td>
+
+                  <td className="py-3.5 px-3 text-center text-[#eef2ff]">
+                    {entry.guessesCount}
+                  </td>
+
+                  <td className="py-3.5 px-3 text-right font-black text-sm text-[#00ff88]">
+                    {entry.score}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {leaderboard.map((entry) => {
-                  const isTop1 = entry.rank === 1;
-                  const isTop2 = entry.rank === 2;
-                  const isTop3 = entry.rank === 3;
-
-                  return (
-                    <tr
-                      key={entry.userId + '-' + entry.rank}
-                      className="hover:bg-white/[0.02] transition-colors"
-                    >
-                      <td className="py-4 px-3 font-bold text-sm">
-                        {isTop1 ? '🥇 #1' : isTop2 ? '🥈 #2' : isTop3 ? '🥉 #3' : `#${entry.rank}`}
-                      </td>
-                      <td className="py-4 px-3">
-                        <div className="flex items-center gap-2.5">
-                          <img
-                            src={entry.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(entry.username)}`}
-                            alt={entry.username}
-                            className="w-7 h-7 rounded-full border border-white/10"
-                          />
-                          <span className="font-sans text-sm font-semibold text-[#eef2ff]">
-                            {entry.name || entry.username}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-3 text-[#8080a0]">
-                        <span className="px-2 py-0.5 rounded bg-white/5 text-[10px]">
-                          {entry.community}
-                        </span>
-                      </td>
-                      <td className="py-4 px-3 text-center text-[#8080a0]">
-                        {entry.guessesCount}
-                      </td>
-                      <td className="py-4 px-3 text-right font-bold text-[#00f0ff] text-sm">
-                        {entry.score.toLocaleString()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
-
     </div>
   );
 };

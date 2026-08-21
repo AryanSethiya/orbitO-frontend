@@ -1,222 +1,207 @@
 import { useState, useEffect } from 'react';
+import { ApiClient } from './api/client';
+import type { Guess, UserProfile } from './types/game';
 import { Navbar } from './components/Navbar';
-import { MissionControlLanding } from './components/MissionControlLanding';
 import { DailyOrbitDesktop } from './components/DailyOrbitDesktop';
 import { OrbitSolvedModal } from './components/OrbitSolvedModal';
 import { SpaceStandingsView } from './components/SpaceStandingsView';
 import { AuthModal } from './components/AuthModal';
-import { ApiClient } from './api/client';
-import type { SessionSummary, AIRoast, UserProfile } from './types/game';
+import { CommunityModal } from './components/CommunityModal';
 
-export function App() {
-  const [currentView, setCurrentView] = useState<'mission_control' | 'gameplay' | 'solved' | 'standings'>('mission_control');
-  const [session, setSession] = useState<SessionSummary | null>(null);
+export default function App() {
+  const [currentView, setCurrentView] = useState<'mission' | 'game' | 'leaderboard'>('game');
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [loadingHint, setLoadingHint] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [roast, setRoast] = useState<AIRoast | null>(null);
-  const [loadingRoast, setLoadingRoast] = useState(false);
+  const [sessionId, setSessionId] = useState<string>('');
+  const [guesses, setGuesses] = useState<Guess[]>([]);
+  const [currentScore, setCurrentScore] = useState<number>(1000);
+  const [solved, setSolved] = useState<boolean>(false);
+  const [unlockedHints, setUnlockedHints] = useState<string[]>([]);
+  const [loadingGuess, setLoadingGuess] = useState<boolean>(false);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [isCommunityOpen, setIsCommunityOpen] = useState<boolean>(false);
+  const [isSolvedOpen, setIsSolvedOpen] = useState<boolean>(false);
+  const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
 
-  // Restore user session
   useEffect(() => {
-    const savedUser = localStorage.getItem('orbito_user');
-    if (savedUser) {
+    // Restore User Profile
+    const cachedUser = localStorage.getItem('orbito_user');
+    if (cachedUser) {
       try {
-        setUser(JSON.parse(savedUser));
-      } catch {}
+        const u = JSON.parse(cachedUser);
+        setUser(u);
+        initSession(u.id);
+      } catch {
+        initSession();
+      }
+    } else {
+      initSession();
     }
   }, []);
 
-  const getPlayerId = () => {
-    if (user?.id) return user.id;
-    let id = localStorage.getItem('orbito_player_id');
-    if (!id || id.length !== 36) {
-      id = typeof crypto !== 'undefined' && crypto.randomUUID 
-        ? crypto.randomUUID() 
-        : '11111111-2222-3333-4444-555555555555';
-      localStorage.setItem('orbito_player_id', id);
-    }
-    return id;
-  };
-
-  const startSession = async () => {
+  const initSession = async (userId?: string) => {
     try {
-      setLoading(true);
-      setError(null);
-      const id = getPlayerId();
-      const sess = await ApiClient.startSession(id);
-      setSession(sess);
-
-      if (sess.solved || sess.status === 'solved') {
-        setCurrentView('solved');
-        loadRoast(sess.sessionId, 'savage');
-      } else {
-        setCurrentView('gameplay');
+      const res = await ApiClient.startSession(userId);
+      setSessionId(res.sessionId);
+      if (res.solved) {
+        setSolved(true);
       }
-    } catch (err: any) {
-      console.error('Session start error:', err);
-      setError(err?.message || 'Could not connect to backend.');
-      setCurrentView('gameplay');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGuess = async (guess: string) => {
-    if (!session) return;
-    try {
-      const result = await ApiClient.submitGuess(session.sessionId, guess);
-      const updatedGuesses = [...(session.guesses || []), result];
-      const isSolved = result.isSolved || result.rank === 1;
-
-      setSession({
-        ...session,
-        guesses: updatedGuesses,
-        guessesCount: updatedGuesses.length,
-        solved: isSolved,
-        score: result.scoreBreakdown?.finalScore ?? session.score,
-      });
-
-      if (isSolved) {
-        setCurrentView('solved');
-        loadRoast(session.sessionId, 'savage');
+      if (res.score !== undefined) {
+        setCurrentScore(res.score);
       }
-    } catch (err: any) {
-      alert(err.message || 'Guess failed');
-    }
-  };
-
-  const handleRequestHint = async () => {
-    if (!session || loadingHint) return;
-    try {
-      setLoadingHint(true);
-      const res = await ApiClient.requestHint(session.sessionId);
-      const currentHints = session.revealedHints || session.unlockedHints || [];
-      const updatedHints = [...currentHints, res.hintText];
-
-      setSession({
-        ...session,
-        hintsUsed: res.hintsUsed,
-        revealedHints: updatedHints,
-        unlockedHints: updatedHints,
-      });
-    } catch (err: any) {
-      alert(err.message || 'Could not unlock hint');
-    } finally {
-      setLoadingHint(false);
-    }
-  };
-
-  const loadRoast = async (sessionId: string, style: 'friendly' | 'savage' | 'hype') => {
-    try {
-      setLoadingRoast(true);
-      const res = await ApiClient.generateRoast(sessionId, style);
-      setRoast(res);
+      if (res.guesses) {
+        setGuesses(res.guesses.map((g: any) => ({
+          id: g.id,
+          word: g.word?.word || g.word,
+          rank: g.rank || 500,
+          similarityScore: g.similarityScore || 0.5,
+          scoreDelta: g.scoreDelta || -5,
+          createdAt: g.createdAt,
+        })));
+      }
+      if (res.revealedHints) {
+        setUnlockedHints(res.revealedHints);
+      }
     } catch (err) {
-      console.error('Roast error:', err);
-    } finally {
-      setLoadingRoast(false);
+      console.error('Session init error:', err);
     }
+  };
+
+  const handleLoginSuccess = (newUser: UserProfile) => {
+    setUser(newUser);
+    initSession(newUser.id);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('orbito_auth_token');
     localStorage.removeItem('orbito_user');
+    localStorage.removeItem('orbito_player_id');
     setUser(null);
-    setCurrentView('mission_control');
+    setActiveRoomCode(null);
+  };
+
+  const handleSubmitGuess = async (word: string) => {
+    if (!sessionId) return;
+    try {
+      setLoadingGuess(true);
+      const res: any = await ApiClient.submitGuess(sessionId, word);
+      
+      const newGuess: Guess = {
+        word: res.word || word,
+        rank: res.rank || 500,
+        similarityScore: res.semanticScore !== undefined ? res.semanticScore : (res.similarityScore || 0.5),
+        scoreDelta: -5,
+        createdAt: new Date().toISOString(),
+      };
+
+      setGuesses((prev) => [...prev, newGuess]);
+      if (res.scoreBreakdown?.finalScore !== undefined) {
+        setCurrentScore(res.scoreBreakdown.finalScore);
+      } else {
+        setCurrentScore((prev) => Math.max(0, prev - 5));
+      }
+
+      if (res.isSolved || res.rank === 1) {
+        setSolved(true);
+        setIsSolvedOpen(true);
+      }
+    } catch (err: any) {
+      console.warn('Guess error:', err.message);
+    } finally {
+      setLoadingGuess(false);
+    }
+  };
+
+  const handleRequestHint = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await ApiClient.requestHint(sessionId);
+      setUnlockedHints(res.session.revealedHints || []);
+      setCurrentScore(res.session.score);
+    } catch (err: any) {
+      console.warn('Hint error:', err.message);
+    }
+  };
+
+  const handleRoomJoined = (room: { id: string; code: string; name: string }) => {
+    setActiveRoomCode(room.code);
+    if (user) {
+      const updatedUser = { ...user, community: room.name };
+      setUser(updatedUser);
+      localStorage.setItem('orbito_user', JSON.stringify(updatedUser));
+    }
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col items-center bg-[#05050c] text-[#eef2ff] overflow-x-hidden">
-      <div className="starfield-bg"></div>
-      <div className="nebula-glow"></div>
+    <div className="min-h-screen bg-[#05050c] text-[#eef2ff] font-sans relative overflow-x-hidden selection:bg-[#00f0ff] selection:text-[#05050c]">
+      {/* Dynamic Starfield Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-[#00f0ff]/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-[#ff5e07]/5 rounded-full blur-3xl" />
+      </div>
 
       <Navbar
-        activeTab={currentView === 'standings' ? 'standings' : 'play'}
-        onSelectTab={(tab) => {
-          if (tab === 'standings') setCurrentView('standings');
-          if (tab === 'play') {
-            if (session) setCurrentView(session.solved ? 'solved' : 'gameplay');
-            else startSession();
-          }
-        }}
-        onGoHome={() => setCurrentView('mission_control')}
+        currentView={currentView}
+        setCurrentView={setCurrentView}
         user={user}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenCommunity={() => setIsCommunityOpen(true)}
         onLogout={handleLogout}
+        activeRoomCode={activeRoomCode}
       />
 
-      {currentView === 'mission_control' && (
-        <MissionControlLanding
-          onLaunch={() => startSession()}
-          onOpenComms={() => startSession()}
-          user={user}
-          onOpenAuth={() => setIsAuthOpen(true)}
-        />
-      )}
-
-      {currentView === 'gameplay' && (
-        loading ? (
-          <div className="min-h-screen flex flex-col items-center justify-center gap-3 relative z-20">
-            <div className="w-8 h-8 rounded-full border-2 border-[#00f0ff] border-t-transparent animate-spin"></div>
-            <p className="font-mono text-xs text-[#00f0ff] tracking-widest uppercase animate-pulse">
-              INITIALIZING RADAR SENSORS...
-            </p>
-          </div>
-        ) : session ? (
+      <main className="relative z-10">
+        {currentView === 'game' && (
           <DailyOrbitDesktop
-            session={session}
-            onGuess={handleGuess}
+            guesses={guesses}
+            currentScore={currentScore}
+            solved={solved}
+            unlockedHints={unlockedHints}
+            onSubmitGuess={handleSubmitGuess}
             onRequestHint={handleRequestHint}
-            onReset={() => {
-              if (session.solved) {
-                alert('Daily orbit completed! Board cannot be reset.');
-              } else {
-                startSession();
-              }
-            }}
-            loadingHint={loadingHint}
+            onShowRoast={() => setIsSolvedOpen(true)}
+            onOpenStandings={() => setCurrentView('leaderboard')}
+            user={user}
+            loadingGuess={loadingGuess}
           />
-        ) : (
-          <div className="min-h-screen flex flex-col items-center justify-center gap-4 relative z-20">
-            <p className="font-mono text-sm text-[#ff5e07]">Orbital Uplink Offline</p>
-            <p className="font-mono text-xs text-[#8080a0]">{error}</p>
-            <button
-              onClick={startSession}
-              className="py-2 px-6 rounded-full border border-[#00f0ff] text-[#00f0ff] font-mono text-xs uppercase"
-            >
-              Retry
-            </button>
-          </div>
-        )
-      )}
+        )}
 
-      {currentView === 'solved' && session && (
-        <OrbitSolvedModal
-          guessesCount={session.guessesCount}
-          scoreBreakdown={session.guesses && session.guesses[session.guesses.length - 1]?.scoreBreakdown}
-          hintsUsed={session.hintsUsed}
-          roast={roast}
-          onGenerateRoast={(style) => loadRoast(session.sessionId, style)}
-          loadingRoast={loadingRoast}
-          onViewStandings={() => setCurrentView('standings')}
-        />
-      )}
-
-      {currentView === 'standings' && <SpaceStandingsView />}
+        {currentView === 'leaderboard' && (
+          <SpaceStandingsView
+            user={user}
+            onOpenCommunity={() => setIsCommunityOpen(true)}
+            activeRoomCode={activeRoomCode}
+          />
+        )}
+      </main>
 
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onLoginSuccess={(u) => {
-          setUser(u);
-          startSession();
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      <CommunityModal
+        isOpen={isCommunityOpen}
+        onClose={() => setIsCommunityOpen(false)}
+        user={user}
+        onRoomJoined={handleRoomJoined}
+        onRequireAuth={() => {
+          setIsCommunityOpen(false);
+          setIsAuthOpen(true);
         }}
+      />
+
+      <OrbitSolvedModal
+        isOpen={isSolvedOpen}
+        onClose={() => setIsSolvedOpen(false)}
+        onOpenStandings={() => {
+          setIsSolvedOpen(false);
+          setCurrentView('leaderboard');
+        }}
+        sessionId={sessionId}
+        finalScore={currentScore}
+        guessesCount={guesses.length}
       />
     </div>
   );
 }
-
-export default App;

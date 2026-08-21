@@ -88,3 +88,39 @@ export interface LeaderboardResponse {
   totalEntries: number;
   leaderboard: LeaderboardEntry[];
 }
+export interface Guess {
+  id?: string;
+  word: string;
+  rank: number;
+  similarityScore: number;
+  scoreDelta?: number;
+  createdAt?: string;
+}
+
+export interface GuessResponse {
+  guess: {
+    id: string;
+    word: string;
+    rank: number;
+    similarityScore: number;
+  };
+  session: {
+    id: string;
+    score: number;
+    guessesCount: number;
+    solved: boolean;
+  };
+}
+
+export interface HintResponse {
+  session: {
+    id: string;
+    score: number;
+    hintsUsed: number;
+    revealedHints: string[];
+  };
+}
+
+export interface RoastResponse {
+  roastText: string;
+}
