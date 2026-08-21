@@ -1,7 +1,7 @@
 import type { GuessResponse, HintResponse, RoastResponse, LeaderboardResponse, UserProfile } from '../types/game';
 
 const LOCAL_URL = 'http://127.0.0.1:3000';
-const PROD_URL = import.meta.env.VITE_API_URL || 'https://orbito-backend-zacg.onrender.com';
+const PROD_URL = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://orbito-backend-zacg.onrender.com').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 // Primary URL defaults to local when developing locally, with graceful fallback
 const RAW_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? LOCAL_URL : PROD_URL;
