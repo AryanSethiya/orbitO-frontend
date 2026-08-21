@@ -1,3 +1,12 @@
+export interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  name: string;
+  avatarUrl: string;
+  community: string;
+}
+
 export interface SemanticSignal {
   tier: 'CENTER' | 'BURNING' | 'VERY_HOT' | 'HOT' | 'WARM' | 'LUKEWARM' | 'COOL' | 'COLD' | 'DEEP_SPACE';
   emoji: string;
@@ -41,7 +50,6 @@ export interface SessionSummary {
   startedAt?: string | Date;
   completedAt?: string | Date | null;
   guesses: GuessResult[];
-  // Aliases
   date?: string;
   difficulty?: string;
   status?: string;
@@ -65,14 +73,18 @@ export interface LeaderboardEntry {
   rank: number;
   userId: string;
   username: string;
+  name?: string;
+  avatarUrl?: string;
+  community: string;
   score: number;
-  guessesCount?: number;
-  hintsUsed?: number;
+  guessesCount: number;
+  hintsUsed: number;
   completedAt?: string;
 }
 
 export interface LeaderboardResponse {
   date: string;
+  community?: string;
   totalEntries: number;
   leaderboard: LeaderboardEntry[];
 }

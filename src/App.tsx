@@ -1,22 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { MissionControlLanding } from './components/MissionControlLanding';
 import { DailyOrbitDesktop } from './components/DailyOrbitDesktop';
 import { OrbitSolvedModal } from './components/OrbitSolvedModal';
 import { SpaceStandingsView } from './components/SpaceStandingsView';
+import { AuthModal } from './components/AuthModal';
 import { ApiClient } from './api/client';
-import type { SessionSummary, AIRoast } from './types/game';
+import type { SessionSummary, AIRoast, UserProfile } from './types/game';
 
 export function App() {
   const [currentView, setCurrentView] = useState<'mission_control' | 'gameplay' | 'solved' | 'standings'>('mission_control');
   const [session, setSession] = useState<SessionSummary | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingHint, setLoadingHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roast, setRoast] = useState<AIRoast | null>(null);
   const [loadingRoast, setLoadingRoast] = useState(false);
 
+  // Restore user session
+  useEffect(() => {
+    const savedUser = localStorage.getItem('orbito_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {}
+    }
+  }, []);
+
   const getPlayerId = () => {
+    if (user?.id) return user.id;
     let id = localStorage.getItem('orbito_player_id');
     if (!id || id.length !== 36) {
       id = typeof crypto !== 'undefined' && crypto.randomUUID 
@@ -48,11 +62,6 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleResetBoard = () => {
-    localStorage.removeItem('orbito_player_id');
-    startSession();
   };
 
   const handleGuess = async (guess: string) => {
@@ -112,6 +121,13 @@ export function App() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('orbito_auth_token');
+    localStorage.removeItem('orbito_user');
+    setUser(null);
+    setCurrentView('mission_control');
+  };
+
   return (
     <div className="min-h-screen relative flex flex-col items-center bg-[#05050c] text-[#eef2ff] overflow-x-hidden">
       <div className="starfield-bg"></div>
@@ -127,12 +143,17 @@ export function App() {
           }
         }}
         onGoHome={() => setCurrentView('mission_control')}
+        user={user}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onLogout={handleLogout}
       />
 
       {currentView === 'mission_control' && (
         <MissionControlLanding
           onLaunch={() => startSession()}
           onOpenComms={() => startSession()}
+          user={user}
+          onOpenAuth={() => setIsAuthOpen(true)}
         />
       )}
 
@@ -149,7 +170,13 @@ export function App() {
             session={session}
             onGuess={handleGuess}
             onRequestHint={handleRequestHint}
-            onReset={handleResetBoard}
+            onReset={() => {
+              if (session.solved) {
+                alert('Daily orbit completed! Board cannot be reset.');
+              } else {
+                startSession();
+              }
+            }}
             loadingHint={loadingHint}
           />
         ) : (
@@ -174,12 +201,20 @@ export function App() {
           roast={roast}
           onGenerateRoast={(style) => loadRoast(session.sessionId, style)}
           loadingRoast={loadingRoast}
-          onReset={handleResetBoard}
           onViewStandings={() => setCurrentView('standings')}
         />
       )}
 
       {currentView === 'standings' && <SpaceStandingsView />}
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLoginSuccess={(u) => {
+          setUser(u);
+          startSession();
+        }}
+      />
     </div>
   );
 }

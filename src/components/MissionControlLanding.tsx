@@ -1,85 +1,104 @@
-import { useState, type FC } from 'react';
-import { Rocket, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import type { FC } from 'react';
+import type { UserProfile } from '../types/game';
+import { Play, MessageSquare, Shield, Users } from 'lucide-react';
 
-interface MissionControlProps {
-  onLaunch: (callsign: string) => void;
+interface MissionControlLandingProps {
+  onLaunch: () => void;
   onOpenComms: () => void;
+  user: UserProfile | null;
+  onOpenAuth: () => void;
 }
 
-export const MissionControlLanding: FC<MissionControlProps> = ({ onLaunch, onOpenComms }) => {
-  const [callsign, setCallsign] = useState(
-    () => localStorage.getItem('orbito_username') || 'AstroPioneer'
-  );
-
-  const handleLaunch = () => {
-    localStorage.setItem('orbito_username', callsign);
-    onLaunch(callsign);
-  };
-
+export const MissionControlLanding: FC<MissionControlLandingProps> = ({
+  onLaunch,
+  onOpenComms,
+  user,
+  onOpenAuth,
+}) => {
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 relative z-10">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="stitch-card w-full max-w-[420px] rounded-3xl p-8 sm:p-10 flex flex-col items-center text-center relative"
-      >
-        {/* Glowing Orb Icon */}
-        <div className="w-20 h-20 mx-auto mb-6 relative flex items-center justify-center">
-          <div className="absolute inset-0 rounded-full border border-[#00f0ff]/20 animate-ping" style={{ animationDuration: '3s' }}></div>
-          <div className="absolute inset-2 rounded-full border border-[#00f0ff]/40"></div>
-          <div className="absolute inset-5 rounded-full border border-[#00f0ff]/70"></div>
-          <div className="w-4 h-4 rounded-full bg-[#00f0ff] shadow-[0_0_20px_#00f0ff]"></div>
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative z-10 w-full">
+      <div className="w-full max-w-md stitch-card rounded-3xl p-8 sm:p-10 border border-white/10 flex flex-col items-center text-center shadow-2xl relative">
+        
+        {/* Glow Pulse Rings */}
+        <div className="w-28 h-28 rounded-full border border-white/10 flex items-center justify-center relative my-4">
+          <div className="absolute inset-0 rounded-full border border-[#00f0ff]/20 animate-ping"></div>
+          <div className="w-16 h-16 rounded-full border border-[#00f0ff]/40 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-[#00f0ff] shadow-[0_0_20px_#00f0ff]"></div>
+          </div>
         </div>
 
-        {/* Title & Subtitle */}
-        <h1 className="font-sans text-4xl sm:text-5xl font-bold text-white tracking-tight mb-2">
+        {/* Title */}
+        <h1 className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-[#eef2ff] mt-2 mb-2">
           Orbito
         </h1>
-        <p className="font-sans text-sm text-[#8080a0] max-w-[280px] mb-8 leading-relaxed">
+
+        {/* Tagline */}
+        <p className="font-sans text-sm text-[#8080a0] mb-6 max-w-xs leading-relaxed">
           The semantic word game that orbits the center.
         </p>
 
-        {/* Callsign Quick Config */}
-        <div className="w-full mb-6 text-left">
-          <label className="block font-mono text-[10px] uppercase tracking-wider text-[#8080a0] mb-1.5 px-1">
-            Pilot Callsign
-          </label>
-          <input
-            type="text"
-            value={callsign}
-            onChange={(e) => setCallsign(e.target.value)}
-            className="w-full bg-[#070714] border border-white/10 rounded-xl py-2.5 px-3.5 font-mono text-xs text-[#00f0ff] focus:outline-none focus:border-[#00f0ff] transition-all"
-            placeholder="AstroPioneer"
-          />
-        </div>
-
-        {/* Action Buttons (Dual Pills) */}
-        <div className="grid grid-cols-2 gap-3 w-full mb-6">
-          <button
-            onClick={handleLaunch}
-            className="py-3 px-4 rounded-full border border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff] font-mono text-[11px] font-bold uppercase tracking-wider hover:bg-[#00f0ff] hover:text-[#05050c] hover:shadow-[0_0_20px_rgba(0,240,255,0.6)] active:scale-95 transition-all flex items-center justify-center gap-1.5"
+        {/* Authenticated Pilot Badge or Sign-In Prompt */}
+        {user ? (
+          <div className="w-full bg-[#070714] border border-white/5 rounded-2xl p-3.5 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={user.avatarUrl} alt={user.name} className="w-9 h-9 rounded-full border border-[#00f0ff]" />
+              <div className="text-left">
+                <span className="font-mono text-xs font-bold text-[#eef2ff] block">{user.name}</span>
+                <span className="font-mono text-[10px] text-[#00f0ff] flex items-center gap-1">
+                  <Users className="w-2.5 h-2.5" />
+                  {user.community}
+                </span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono text-[#00f0ff] bg-[#00f0ff]/10 px-2 py-0.5 rounded border border-[#00f0ff]/30">
+              Ready
+            </span>
+          </div>
+        ) : (
+          <div
+            onClick={onOpenAuth}
+            className="w-full bg-[#070714] border border-[#00f0ff]/30 hover:border-[#00f0ff] rounded-2xl p-3.5 mb-6 flex items-center justify-between cursor-pointer transition-all group"
           >
-            <Rocket className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-3">
+              <Shield className="w-6 h-6 text-[#00f0ff]" />
+              <div className="text-left">
+                <span className="font-mono text-xs font-bold text-[#eef2ff] block group-hover:text-[#00f0ff]">
+                  Google Pilot Authentication
+                </span>
+                <span className="font-mono text-[10px] text-[#8080a0]">
+                  Link profile to record daily standing
+                </span>
+              </div>
+            </div>
+            <span className="font-mono text-[10px] text-[#00f0ff] font-bold">Sign In &gt;</span>
+          </div>
+        )}
+
+        {/* Action Dual Buttons */}
+        <div className="w-full grid grid-cols-2 gap-3 mb-6">
+          <button
+            onClick={onLaunch}
+            className="py-3.5 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider hover:shadow-[0_0_25px_rgba(0,240,255,0.6)] active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <Play className="w-4 h-4 fill-current" />
             <span>Launch</span>
           </button>
 
           <button
             onClick={onOpenComms}
-            className="py-3 px-4 rounded-full border border-white/15 bg-white/5 text-[#eef2ff] font-mono text-[11px] uppercase tracking-wider hover:border-white/40 hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+            className="py-3.5 px-4 rounded-xl bg-transparent border border-white/10 text-[#8080a0] font-mono text-xs font-bold uppercase tracking-wider hover:border-white/30 hover:text-[#eef2ff] active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-[#8080a0]" />
+            <MessageSquare className="w-4 h-4" />
             <span>Comms</span>
           </button>
         </div>
 
-        {/* Systems Online Indicator */}
-        <div className="flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase text-[#8080a0]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#00f0ff] shadow-[0_0_6px_#00f0ff] animate-pulse"></span>
-          <span>Core Systems Online</span>
+        {/* System Online Badge */}
+        <div className="flex items-center gap-2 font-mono text-[10px] text-[#00f0ff]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00f0ff] animate-ping"></span>
+          <span>• CORE SYSTEMS ONLINE</span>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </main>
   );
 };
