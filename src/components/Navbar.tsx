@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import type { UserProfile } from '../types/game';
-import { Users, LogIn, LogOut } from 'lucide-react';
+import { Users, LogIn, LogOut, PlusCircle } from 'lucide-react';
 
 interface NavbarProps {
   currentView: 'mission' | 'game' | 'leaderboard';
@@ -21,11 +21,13 @@ export const Navbar: FC<NavbarProps> = ({
   onLogout,
   activeRoomCode,
 }) => {
+  const hasCustomRoom = user?.community && user.community !== 'Global Explorers' && user.community !== 'Starfleet Academy';
+
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#05050c]/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-3 flex items-center justify-between">
       {/* Brand Logo */}
       <div 
-        onClick={() => setCurrentView('mission')}
+        onClick={() => setCurrentView('game')}
         className="flex items-center gap-3 cursor-pointer group"
       >
         <img 
@@ -67,20 +69,34 @@ export const Navbar: FC<NavbarProps> = ({
         </button>
       </nav>
 
-      {/* User Actions / Auth */}
+      {/* User Actions / Room Control */}
       <div className="flex items-center gap-2 sm:gap-3">
         <button
           id="fleet-rooms-btn"
           onClick={onOpenCommunity}
-          className="px-3 py-1.5 rounded-xl bg-[#00f0ff]/10 border border-[#00f0ff]/30 text-[#00f0ff] font-mono text-xs hover:bg-[#00f0ff]/20 transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,240,255,0.15)]"
+          className={`px-3 py-1.5 rounded-xl font-mono text-xs transition-all flex items-center gap-1.5 ${
+            hasCustomRoom || activeRoomCode
+              ? 'bg-[#00f0ff]/10 border border-[#00f0ff]/30 text-[#00f0ff] hover:bg-[#00f0ff]/20 shadow-[0_0_10px_rgba(0,240,255,0.15)]'
+              : 'bg-white/5 border border-white/15 text-[#8080a0] hover:text-[#00f0ff] hover:border-[#00f0ff]/30'
+          }`}
         >
-          <Users className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline font-bold">
-            {activeRoomCode ? `Room ${activeRoomCode}` : user?.community || 'Rooms'}
-          </span>
-          <span className="sm:hidden font-bold">
-            {activeRoomCode || 'Fleet'}
-          </span>
+          {hasCustomRoom || activeRoomCode ? (
+            <>
+              <Users className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline font-bold">
+                {activeRoomCode ? `Room ${activeRoomCode}` : user?.community}
+              </span>
+              <span className="sm:hidden font-bold">
+                {activeRoomCode || 'Fleet'}
+              </span>
+            </>
+          ) : (
+            <>
+              <PlusCircle className="w-3.5 h-3.5 text-[#00f0ff]" />
+              <span className="hidden sm:inline font-bold">+ Create / Join Room</span>
+              <span className="sm:hidden font-bold">+ Room</span>
+            </>
+          )}
         </button>
 
         {user ? (
@@ -92,7 +108,9 @@ export const Navbar: FC<NavbarProps> = ({
             />
             <div className="hidden md:flex flex-col text-left">
               <span className="font-mono text-xs font-bold text-[#eef2ff] leading-none">{user.name || 'Pilot'}</span>
-              <span className="font-mono text-[9px] text-[#00f0ff] leading-none mt-0.5">{user.community || 'Fleet'}</span>
+              <span className="font-mono text-[9px] text-[#00f0ff] leading-none mt-0.5">
+                {hasCustomRoom ? user?.community : 'Solo Pilot'}
+              </span>
             </div>
             <button
               onClick={onLogout}

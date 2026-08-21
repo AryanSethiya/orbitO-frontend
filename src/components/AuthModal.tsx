@@ -28,8 +28,8 @@ function parseJwt(token: string) {
 }
 
 export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-  const [email, setEmail] = useState('aryansethiya111@gmail.com');
-  const [pilotName, setPilotName] = useState('Aryan Sethiya');
+  const [email, setEmail] = useState('');
+  const [pilotName, setPilotName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +46,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
       setError(null);
       const payload = parseJwt(credentialResponse.credential);
       const userEmail = payload?.email || email;
-      const userName = payload?.name || payload?.given_name || pilotName;
+      const userName = payload?.name || payload?.given_name || pilotName || 'Orbital Pilot';
       const picture = payload?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userName)}`;
       const googleId = payload?.sub;
 
@@ -73,7 +73,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
 
   const handleDirectGoogleLogin = async () => {
     if (!email.trim()) {
-      setError('Please enter a valid Google email.');
+      setError('Please enter your Google email.');
       return;
     }
 
@@ -145,32 +145,32 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
         </div>
 
         <div className="flex items-center gap-3 my-4">
-          <div className="h-[1px] flex-1 bg-white/10"></div>
+          <div className="h-[1px] flex-1 bg-white/10" />
           <span className="font-mono text-[10px] text-[#8080a0] uppercase">Or Quick Launch with Callsign</span>
-          <div className="h-[1px] flex-1 bg-white/10"></div>
+          <div className="h-[1px] flex-1 bg-white/10" />
         </div>
 
         {/* Callsign / Direct Sign-In fallback */}
         <div className="flex flex-col gap-3 text-left">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1">Google Email</label>
+              <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1 font-semibold">Google Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@gmail.com"
-                className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] focus:outline-none focus:border-[#00f0ff]"
+                placeholder="pilot@gmail.com"
+                className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/40 focus:outline-none focus:border-[#00f0ff]"
               />
             </div>
             <div>
-              <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1">Pilot Callsign</label>
+              <label className="font-mono text-[9px] text-[#8080a0] uppercase block mb-1 font-semibold">Pilot Callsign</label>
               <input
                 type="text"
                 value={pilotName}
                 onChange={(e) => setPilotName(e.target.value)}
-                placeholder="Aryan Sethiya"
-                className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] focus:outline-none focus:border-[#00f0ff]"
+                placeholder="StarVoyager"
+                className="w-full bg-[#070714] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/40 focus:outline-none focus:border-[#00f0ff]"
               />
             </div>
           </div>
@@ -181,7 +181,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
             disabled={loading}
             className="w-full py-3 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider active:scale-95 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all flex items-center justify-center gap-2"
           >
-            <span>Launch as {pilotName || 'Pilot'}</span>
+            <span>{loading ? 'Authenticating...' : (pilotName.trim() ? `Launch as ${pilotName}` : 'Launch Mission')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

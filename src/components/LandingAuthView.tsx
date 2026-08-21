@@ -26,8 +26,8 @@ function parseJwt(token: string) {
 }
 
 export const LandingAuthView: FC<LandingAuthViewProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('aryansethiya111@gmail.com');
-  const [pilotName, setPilotName] = useState('Aryan Sethiya');
+  const [email, setEmail] = useState('');
+  const [pilotName, setPilotName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +42,7 @@ export const LandingAuthView: FC<LandingAuthViewProps> = ({ onLoginSuccess }) =>
       setError(null);
       const payload = parseJwt(credentialResponse.credential);
       const userEmail = payload?.email || email;
-      const userName = payload?.name || payload?.given_name || pilotName;
+      const userName = payload?.name || payload?.given_name || pilotName || 'Orbital Pilot';
       const picture = payload?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userName)}`;
       const googleId = payload?.sub;
 
@@ -172,8 +172,8 @@ export const LandingAuthView: FC<LandingAuthViewProps> = ({ onLoginSuccess }) =>
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@gmail.com"
-                className="w-full bg-[#070714] border border-white/15 rounded-xl px-3 py-2.5 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/30 focus:outline-none focus:border-[#00f0ff] transition-colors"
+                placeholder="pilot@gmail.com"
+                className="w-full bg-[#070714] border border-white/15 rounded-xl px-3 py-2.5 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/40 focus:outline-none focus:border-[#00f0ff] transition-colors"
               />
             </div>
             <div>
@@ -182,8 +182,8 @@ export const LandingAuthView: FC<LandingAuthViewProps> = ({ onLoginSuccess }) =>
                 type="text"
                 value={pilotName}
                 onChange={(e) => setPilotName(e.target.value)}
-                placeholder="Aryan Sethiya"
-                className="w-full bg-[#070714] border border-white/15 rounded-xl px-3 py-2.5 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/30 focus:outline-none focus:border-[#00f0ff] transition-colors"
+                placeholder="StarVoyager"
+                className="w-full bg-[#070714] border border-white/15 rounded-xl px-3 py-2.5 text-xs font-mono text-[#eef2ff] placeholder:text-[#8080a0]/40 focus:outline-none focus:border-[#00f0ff] transition-colors"
               />
             </div>
           </div>
@@ -194,8 +194,8 @@ export const LandingAuthView: FC<LandingAuthViewProps> = ({ onLoginSuccess }) =>
             disabled={loading}
             className="w-full mt-1 py-3 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider hover:shadow-[0_0_25px_rgba(0,240,255,0.45)] active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            <span>{loading ? 'Initializing Orbit...' : `Launch as ${pilotName || 'Pilot'}`}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>{loading ? 'Initializing Orbit...' : (pilotName.trim() ? `Launch as ${pilotName}` : 'Launch Mission')}</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </form>
       </div>
