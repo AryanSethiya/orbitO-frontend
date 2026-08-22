@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import type { UserProfile } from '../types/game';
-import { Users, LogIn, LogOut, PlusCircle } from 'lucide-react';
+import { Users, LogIn, PlusCircle, Edit3 } from 'lucide-react';
 
 interface NavbarProps {
   currentView: 'mission' | 'game' | 'leaderboard';
@@ -8,6 +8,7 @@ interface NavbarProps {
   user: UserProfile | null;
   onOpenAuth: () => void;
   onOpenCommunity: () => void;
+  onOpenProfile: () => void;
   onLogout: () => void;
   activeRoomCode?: string | null;
 }
@@ -18,7 +19,7 @@ export const Navbar: FC<NavbarProps> = ({
   user,
   onOpenAuth,
   onOpenCommunity,
-  onLogout,
+  onOpenProfile,
   activeRoomCode,
 }) => {
   const hasCustomRoom = user?.community && user.community !== 'Global Explorers' && user.community !== 'Starfleet Academy';
@@ -69,7 +70,7 @@ export const Navbar: FC<NavbarProps> = ({
         </button>
       </nav>
 
-      {/* User Actions / Room Control */}
+      {/* User Actions / Room Control / Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
         <button
           id="fleet-rooms-btn"
@@ -100,26 +101,26 @@ export const Navbar: FC<NavbarProps> = ({
         </button>
 
         {user ? (
-          <div className="flex items-center gap-2.5 bg-[#0c0c1f] px-3 py-1.5 rounded-2xl border border-white/15">
+          <button
+            onClick={onOpenProfile}
+            title="Edit Pilot Profile / Callsign"
+            className="flex items-center gap-2.5 bg-[#0c0c1f] hover:bg-[#151532] px-3 py-1.5 rounded-2xl border border-white/15 hover:border-[#00f0ff]/50 transition-all cursor-pointer group shadow-sm"
+          >
             <img
               src={user.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.name || user.email || 'pilot')}`}
               alt="Pilot Avatar"
-              className="w-6 h-6 rounded-full border border-[#00f0ff]/50 bg-black/40 object-cover"
+              className="w-6 h-6 rounded-full border border-[#00f0ff]/50 bg-black/40 object-cover group-hover:scale-105 transition-transform"
             />
             <div className="hidden md:flex flex-col text-left">
-              <span className="font-mono text-xs font-bold text-[#eef2ff] leading-none">{user.name || 'Pilot'}</span>
+              <span className="font-mono text-xs font-bold text-[#eef2ff] leading-none flex items-center gap-1 group-hover:text-[#00f0ff] transition-colors">
+                {user.name || 'Pilot'}
+                <Edit3 className="w-2.5 h-2.5 text-[#8080a0] group-hover:text-[#00f0ff]" />
+              </span>
               <span className="font-mono text-[9px] text-[#00f0ff] leading-none mt-0.5">
-                {hasCustomRoom ? user?.community : 'Solo Pilot'}
+                {hasCustomRoom ? user?.community : 'Edit Callsign'}
               </span>
             </div>
-            <button
-              onClick={onLogout}
-              title="Sign Out"
-              className="text-[#8080a0] hover:text-[#ff5e07] transition-colors ml-1"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          </button>
         ) : (
           <button
             id="sign-in-nav-btn"

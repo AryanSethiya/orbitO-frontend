@@ -8,6 +8,7 @@ import { OrbitSolvedModal } from './components/OrbitSolvedModal';
 import { SpaceStandingsView } from './components/SpaceStandingsView';
 import { AuthModal } from './components/AuthModal';
 import { CommunityModal } from './components/CommunityModal';
+import { ProfileModal } from './components/ProfileModal';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'mission' | 'game' | 'leaderboard'>('game');
@@ -19,6 +20,7 @@ export default function App() {
   const [unlockedHints, setUnlockedHints] = useState<string[]>([]);
   const [loadingGuess, setLoadingGuess] = useState<boolean>(false);
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
   const [isCommunityOpen, setIsCommunityOpen] = useState<boolean>(false);
   const [isSolvedOpen, setIsSolvedOpen] = useState<boolean>(false);
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
@@ -71,6 +73,10 @@ export default function App() {
     setCurrentView('game');
   };
 
+  const handleProfileUpdated = (updatedUser: UserProfile) => {
+    setUser(updatedUser);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('orbito_auth_token');
     localStorage.removeItem('orbito_user');
@@ -80,6 +86,7 @@ export default function App() {
     setGuesses([]);
     setSolved(false);
     setUnlockedHints([]);
+    setIsProfileOpen(false);
   };
 
   const handleSubmitGuess = async (word: string) => {
@@ -173,6 +180,7 @@ export default function App() {
         setCurrentView={setCurrentView}
         user={user}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenProfile={() => setIsProfileOpen(true)}
         onOpenCommunity={() => setIsCommunityOpen(true)}
         onLogout={handleLogout}
         activeRoomCode={activeRoomCode}
@@ -208,6 +216,16 @@ export default function App() {
         onClose={() => setIsAuthOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
+
+      {user && (
+        <ProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          user={user}
+          onProfileUpdated={handleProfileUpdated}
+          onLogout={handleLogout}
+        />
+      )}
 
       <CommunityModal
         isOpen={isCommunityOpen}
