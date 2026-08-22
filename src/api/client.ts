@@ -94,7 +94,7 @@ export class ApiClient {
   }
 
   static async loginWithGoogle(payload: { credential?: string; email?: string; name?: string; picture?: string; googleId?: string; community?: string }) {
-    return this.request<{ token: string; user: UserProfile }>('/auth/google', {
+    return this.request<{ token: string; user: UserProfile; isNewUser?: boolean }>('/auth/google', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
