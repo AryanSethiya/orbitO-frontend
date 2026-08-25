@@ -152,6 +152,15 @@ export default function App() {
     }
   };
 
+  const handleRoomLeft = (newCommunityName: string = 'Global Explorers') => {
+    setActiveRoomCode(null);
+    if (user) {
+      const updatedUser = { ...user, community: newCommunityName };
+      setUser(updatedUser);
+      localStorage.setItem('orbito_user', JSON.stringify(updatedUser));
+    }
+  };
+
   // If user is not authenticated, show Landing Sign-In Page
   if (!user) {
     return (
@@ -232,6 +241,7 @@ export default function App() {
         onClose={() => setIsCommunityOpen(false)}
         user={user}
         onRoomJoined={handleRoomJoined}
+        onRoomLeft={handleRoomLeft}
         onRequireAuth={() => {
           setIsCommunityOpen(false);
           setIsAuthOpen(true);

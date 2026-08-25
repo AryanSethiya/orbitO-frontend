@@ -133,6 +133,20 @@ export class ApiClient {
   }
 
   static async getUserRooms(userId: string) {
-    return this.request<{ rooms: Array<{ id: string; code: string; name: string; createdAt: string; joinedAt: string }> }>(`/communities/user/${userId}`);
+    return this.request<{ rooms: Array<{ id: string; code: string; name: string; creatorId?: string; createdAt: string; joinedAt: string }> }>(`/communities/user/${userId}`);
+  }
+
+  static async leaveCommunityRoom(userId: string, roomId?: string, roomCode?: string) {
+    return this.request<{ success: boolean; message: string; community: string }>('/communities/leave', {
+      method: 'POST',
+      body: JSON.stringify({ userId, roomId, roomCode }),
+    });
+  }
+
+  static async deleteCommunityRoom(code: string, userId: string) {
+    return this.request<{ success: boolean; message: string; community: string }>(`/communities/room/${code}?userId=${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ userId }),
+    });
   }
 }
