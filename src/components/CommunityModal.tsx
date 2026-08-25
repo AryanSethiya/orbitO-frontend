@@ -372,9 +372,9 @@ export const CommunityModal: FC<CommunityModalProps> = ({
                               <button
                                 onClick={() => onRoomJoined(room)}
                                 disabled={loading}
-                                className="px-2.5 py-1 rounded-xl bg-[#00f0ff]/15 hover:bg-[#00f0ff]/25 text-[#00f0ff] border border-[#00f0ff]/30 font-mono text-[11px] font-bold transition-all"
+                                className="px-3 py-1.5 rounded-xl bg-[#00f0ff]/15 hover:bg-[#00f0ff]/25 text-[#00f0ff] border border-[#00f0ff]/30 font-mono text-[11px] font-bold transition-all flex items-center gap-1"
                               >
-                                Switch
+                                <span>Switch</span>
                               </button>
                             )}
 
@@ -384,13 +384,13 @@ export const CommunityModal: FC<CommunityModalProps> = ({
                                   <button
                                     onClick={() => handleDisbandFleet(room.code)}
                                     disabled={loading}
-                                    className="px-2.5 py-1 rounded-xl bg-[#ff5e07] hover:bg-[#ff4400] text-black font-mono text-[11px] font-bold transition-all"
+                                    className="px-3 py-1.5 rounded-xl bg-[#ff5e07] hover:bg-[#ff4400] text-black font-mono text-[11px] font-bold transition-all shadow-[0_0_15px_rgba(255,94,7,0.4)]"
                                   >
-                                    Confirm Disband
+                                    Confirm End Room
                                   </button>
                                   <button
                                     onClick={() => setConfirmDisbandCode(null)}
-                                    className="p-1 text-[#8080a0] hover:text-[#eef2ff]"
+                                    className="p-1.5 rounded-lg bg-white/5 text-[#8080a0] hover:text-[#eef2ff]"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                   </button>
@@ -399,29 +399,31 @@ export const CommunityModal: FC<CommunityModalProps> = ({
                                 <button
                                   onClick={() => setConfirmDisbandCode(room.code)}
                                   disabled={loading}
-                                  className="p-1.5 rounded-lg text-[#8080a0] hover:text-[#ff5e07] hover:bg-[#ff5e07]/10 transition-colors"
-                                  title="Disband Fleet (Delete room for all members)"
+                                  className="px-2.5 py-1.5 rounded-xl bg-[#ff5e07]/10 hover:bg-[#ff5e07]/20 text-[#ff5e07] border border-[#ff5e07]/30 font-mono text-[11px] font-bold transition-all flex items-center gap-1.5"
+                                  title="End & Delete this community for all participants"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                  <span>End Community</span>
                                 </button>
                               )
                             ) : (
                               <button
                                 onClick={() => handleLeaveFleet(room.id, room.code)}
                                 disabled={loading}
-                                className="p-1.5 rounded-lg text-[#8080a0] hover:text-[#ff5e07] hover:bg-[#ff5e07]/10 transition-colors"
-                                title="Leave Fleet"
+                                className="px-2.5 py-1.5 rounded-xl bg-[#ff5e07]/10 hover:bg-[#ff5e07]/20 text-[#ff5e07] border border-[#ff5e07]/30 font-mono text-[11px] font-bold transition-all flex items-center gap-1.5"
+                                title="Leave this community"
                               >
-                                <LogOut className="w-3.5 h-3.5" />
+                                <LogOut className="w-3.5 h-3.5 shrink-0" />
+                                <span>Leave Fleet</span>
                               </button>
                             )}
                           </div>
                         </div>
 
                         {isConfirmingDisband && (
-                          <div className="p-2 rounded-xl bg-[#ff5e07]/10 border border-[#ff5e07]/30 text-[10px] font-mono text-[#ff5e07] flex items-center gap-1.5">
-                            <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                            <span>This will permanently delete this room for all fleet members.</span>
+                          <div className="p-2.5 rounded-xl bg-[#ff5e07]/15 border border-[#ff5e07]/40 text-[11px] font-mono text-[#ff5e07] flex items-center gap-2">
+                            <ShieldAlert className="w-4 h-4 shrink-0" />
+                            <span><strong>Admin Action:</strong> This will permanently delete and end this community fleet for all participants.</span>
                           </div>
                         )}
                       </div>

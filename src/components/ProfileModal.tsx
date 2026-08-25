@@ -9,6 +9,7 @@ interface ProfileModalProps {
   user: UserProfile;
   onProfileUpdated: (updatedUser: UserProfile) => void;
   onLogout: () => void;
+  onOpenCommunity?: () => void;
 }
 
 export const ProfileModal: FC<ProfileModalProps> = ({
@@ -17,6 +18,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   user,
   onProfileUpdated,
   onLogout,
+  onOpenCommunity,
 }) => {
   const [callsign, setCallsign] = useState(user.name || '');
   const [saving, setSaving] = useState(false);
@@ -142,9 +144,23 @@ export const ProfileModal: FC<ProfileModalProps> = ({
           <div className="p-3.5 rounded-xl bg-[#0c0c1f] border border-white/5 space-y-2">
             <div className="flex justify-between items-center text-xs font-mono">
               <span className="text-[#8080a0]">Fleet / Community:</span>
-              <span className="text-[#00f0ff] font-bold">
-                {user.community || 'Solo Orbit'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[#00f0ff] font-bold">
+                  {user.community || 'Solo Orbit'}
+                </span>
+                {onOpenCommunity && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenCommunity();
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-[#00f0ff]/10 hover:bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/30 text-[10px] uppercase font-bold transition-all"
+                  >
+                    Manage / Exit
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex justify-between items-center text-xs font-mono">
               <span className="text-[#8080a0]">Status:</span>
