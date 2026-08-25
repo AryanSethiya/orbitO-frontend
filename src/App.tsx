@@ -24,6 +24,7 @@ export default function App() {
   const [isCommunityOpen, setIsCommunityOpen] = useState<boolean>(false);
   const [isSolvedOpen, setIsSolvedOpen] = useState<boolean>(false);
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
+  const [savedRoast, setSavedRoast] = useState<string | null>(null);
 
   useEffect(() => {
     // Restore User Profile if previously logged in
@@ -48,6 +49,9 @@ export default function App() {
       }
       if (res.score !== undefined) {
         setCurrentScore(res.score);
+      }
+      if (res.roastText) {
+        setSavedRoast(res.roastText);
       }
       if (res.guesses) {
         setGuesses(res.guesses.map((g: any) => ({
@@ -259,6 +263,9 @@ export default function App() {
         finalScore={currentScore}
         guessesCount={guesses.length}
         targetWord={guesses.find((g) => g.rank === 1)?.word || 'GALAXY'}
+        userCallsign={user?.username || user?.name || 'Pilot'}
+        savedRoast={savedRoast}
+        onRoastLoaded={(roast) => setSavedRoast(roast)}
       />
     </div>
   );

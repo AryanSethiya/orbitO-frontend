@@ -49,7 +49,7 @@ export class ApiClient {
   }
 
   static async startSession(userId?: string) {
-    return this.request<{ sessionId: string; puzzleId: string; date: string; solved?: boolean; score?: number; guesses?: any[]; revealedHints?: string[] }>('/sessions', {
+    return this.request<{ sessionId: string; puzzleId: string; date: string; solved?: boolean; score?: number; guesses?: any[]; revealedHints?: string[]; roastText?: string | null }>('/sessions', {
       method: 'POST',
       body: JSON.stringify({ userId }),
     });

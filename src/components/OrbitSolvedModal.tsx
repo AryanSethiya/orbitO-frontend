@@ -10,6 +10,9 @@ interface OrbitSolvedModalProps {
   finalScore: number;
   guessesCount: number;
   targetWord?: string;
+  userCallsign?: string;
+  savedRoast?: string | null;
+  onRoastLoaded?: (roastText: string) => void;
 }
 
 export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
@@ -20,6 +23,9 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
   finalScore,
   guessesCount,
   targetWord = 'TODAY TARGET',
+  userCallsign = 'Pilot',
+  savedRoast,
+  onRoastLoaded,
 }) => {
   const [streamedRoast, setStreamedRoast] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -43,17 +49,27 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
   }, []);
 
   useEffect(() => {
-    if (isOpen && sessionId) {
-      fetchSavageRoast();
+    if (isOpen) {
+      if (savedRoast) {
+        streamText(savedRoast);
+      } else if (sessionId) {
+        fetchSavageRoast();
+      }
     }
-  }, [isOpen, sessionId]);
+  }, [isOpen, sessionId, savedRoast]);
 
   const fetchSavageRoast = async () => {
     try {
       const res = await ApiClient.generateRoast(sessionId, 'savage');
+      if (onRoastLoaded) {
+        onRoastLoaded(res.roastText);
+      }
       streamText(res.roastText);
     } catch {
-      const fallback = `Took you ${guessesCount} chaotic probes just to stumble into "${targetWord}"? Even an offline satellite navigates faster than that.`;
+      const fallback = `${userCallsign}, taking ${guessesCount} chaotic probes to finally stumble into "${targetWord}"? Even an offline satellite navigates faster than that.`;
+      if (onRoastLoaded) {
+        onRoastLoaded(fallback);
+      }
       streamText(fallback);
     }
   };
