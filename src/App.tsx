@@ -238,6 +238,7 @@ export default function App() {
           onProfileUpdated={handleProfileUpdated}
           onLogout={handleLogout}
           onOpenCommunity={() => setIsCommunityOpen(true)}
+          onRoomLeft={handleRoomLeft}
         />
       )}
 

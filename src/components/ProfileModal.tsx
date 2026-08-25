@@ -10,6 +10,7 @@ interface ProfileModalProps {
   onProfileUpdated: (updatedUser: UserProfile) => void;
   onLogout: () => void;
   onOpenCommunity?: () => void;
+  onRoomLeft?: (communityName: string) => void;
 }
 
 export const ProfileModal: FC<ProfileModalProps> = ({
@@ -19,11 +20,19 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   onProfileUpdated,
   onLogout,
   onOpenCommunity,
+  onRoomLeft,
 }) => {
   const [callsign, setCallsign] = useState(user.name || '');
   const [saving, setSaving] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const isCustomFleet =
+    user.community &&
+    user.community !== 'Global Explorers' &&
+    user.community !== 'Solo Orbit' &&
+    user.community !== 'Starfleet Academy';
 
   useEffect(() => {
     if (isOpen) {
@@ -31,79 +40,80 @@ export const ProfileModal: FC<ProfileModalProps> = ({
       setError(null);
       setSuccess(false);
     }
-  }, [isOpen, user]);
+  }, [isOpen, user.name]);
 
   if (!isOpen) return null;
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = callsign.trim();
     if (!trimmed) {
-      setError('Callsign cannot be empty.');
+      setError('Callsign cannot be empty');
+      return;
+    }
+    if (trimmed.length > 30) {
+      setError('Callsign must be 30 characters or fewer');
       return;
     }
 
     try {
       setSaving(true);
       setError(null);
-      setSuccess(false);
-
       const res = await ApiClient.updateProfile(user.id, trimmed);
-      const updatedUser: UserProfile = {
-        ...user,
-        name: res.user?.name || trimmed,
-      };
-
-      localStorage.setItem('orbito_user', JSON.stringify(updatedUser));
-      onProfileUpdated(updatedUser);
+      onProfileUpdated(res.user);
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
-      }, 2500);
+        onClose();
+      }, 1200);
     } catch (err: any) {
-      console.error('Failed to update callsign:', err);
-      setError(err.message || 'Failed to update pilot callsign. Please try again.');
+      setError(err?.message || 'Failed to update callsign');
     } finally {
       setSaving(false);
     }
   };
 
+  const handleQuickLeave = async () => {
+    try {
+      setLeaving(true);
+      setError(null);
+      const res = await ApiClient.leaveCommunityRoom(user.id);
+      const updatedUser = { ...user, community: res.community || 'Global Explorers' };
+      onProfileUpdated(updatedUser);
+      if (onRoomLeft) {
+        onRoomLeft(res.community || 'Global Explorers');
+      }
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+      }, 2000);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to leave fleet');
+    } finally {
+      setLeaving(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-[#05050c]/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md stitch-card rounded-3xl p-6 sm:p-8 border border-white/10 relative shadow-2xl text-left">
+    <div className="fixed inset-0 bg-[#05050c]/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md stitch-card rounded-3xl p-6 sm:p-8 border border-white/10 relative shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 text-[#8080a0] hover:text-[#eef2ff] transition-colors p-1"
+          className="absolute right-5 top-5 text-[#8080a0] hover:text-[#eef2ff] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
-        <div className="flex items-center gap-3.5 mb-6">
-          <div className="relative">
-            <img
-              src={
-                user.avatarUrl ||
-                `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.name || user.email || 'pilot')}`
-              }
-              alt="Pilot Avatar"
-              className="w-14 h-14 rounded-2xl border-2 border-[#00f0ff] bg-black/50 object-cover shadow-[0_0_20px_rgba(0,240,255,0.3)]"
-            />
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#00ff88] border-2 border-[#05050c] flex items-center justify-center">
-              <ShieldCheck className="w-3 h-3 text-[#05050c]" />
-            </div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-full bg-[#00f0ff]/10 border border-[#00f0ff]/30 flex items-center justify-center">
+            <User className="w-5 h-5 text-[#00f0ff]" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Pilot Profile</h2>
-            </div>
-            <p className="font-mono text-xs text-[#8080a0] truncate max-w-[220px]">
-              {user.email || 'Google Authenticated'}
-            </p>
+            <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Pilot Profile</h2>
+            <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Mission Control Identity</p>
           </div>
         </div>
 
-        {/* Alerts */}
         {error && (
           <div className="p-3 mb-4 rounded-xl bg-[#ff5e07]/10 border border-[#ff5e07]/30 text-xs font-mono text-[#ff5e07] flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -114,15 +124,25 @@ export const ProfileModal: FC<ProfileModalProps> = ({
         {success && (
           <div className="p-3 mb-4 rounded-xl bg-[#00ff88]/10 border border-[#00ff88]/30 text-xs font-mono text-[#00ff88] flex items-center gap-2">
             <Check className="w-4 h-4 shrink-0" />
-            <span>Pilot callsign updated and saved permanently!</span>
+            <span>Profile updated successfully!</span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div>
-            <label className="font-mono text-[10px] text-[#00f0ff] uppercase block mb-1.5 font-bold tracking-wider">
-              Pilot Callsign (Leaderboard & Standings Name)
+            <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1.5 font-bold">
+              Account Email
+            </label>
+            <div className="w-full bg-[#070714] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#8080a0] flex items-center justify-between">
+              <span>{user.email}</span>
+              <ShieldCheck className="w-4 h-4 text-[#00ff88]" />
+            </div>
+          </div>
+
+          <div>
+            <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1.5 font-bold flex justify-between">
+              <span>Pilot Callsign / Display Name</span>
+              <span className="text-[#00f0ff]">Max 30 chars</span>
             </label>
             <div className="relative">
               <input
@@ -141,13 +161,27 @@ export const ProfileModal: FC<ProfileModalProps> = ({
             </p>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#0c0c1f] border border-white/5 space-y-2">
+          <div className="p-3.5 rounded-xl bg-[#0c0c1f] border border-white/5 space-y-2.5">
             <div className="flex justify-between items-center text-xs font-mono">
               <span className="text-[#8080a0]">Fleet / Community:</span>
-              <div className="flex items-center gap-2">
-                <span className="text-[#00f0ff] font-bold">
-                  {user.community || 'Solo Orbit'}
-                </span>
+              <span className="text-[#00f0ff] font-bold">
+                {user.community || 'Solo Orbit'}
+              </span>
+            </div>
+
+            {isCustomFleet && (
+              <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-2">
+                <button
+                  type="button"
+                  onClick={handleQuickLeave}
+                  disabled={leaving}
+                  className="px-3 py-1.5 rounded-xl bg-[#ff5e07]/15 hover:bg-[#ff5e07]/25 text-[#ff5e07] border border-[#ff5e07]/30 text-[11px] font-mono font-bold transition-all flex items-center gap-1.5"
+                  title="Leave this fleet and return to Global Explorers"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>{leaving ? 'Leaving...' : 'Leave Fleet'}</span>
+                </button>
+
                 {onOpenCommunity && (
                   <button
                     type="button"
@@ -155,14 +189,16 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                       onClose();
                       onOpenCommunity();
                     }}
-                    className="px-2 py-0.5 rounded-lg bg-[#00f0ff]/10 hover:bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/30 text-[10px] uppercase font-bold transition-all"
+                    className="px-3 py-1.5 rounded-xl bg-[#00f0ff]/15 hover:bg-[#00f0ff]/25 text-[#00f0ff] border border-[#00f0ff]/30 text-[11px] font-mono font-bold transition-all flex items-center gap-1.5"
+                    title="Open Community Hub to End Community (Admin) or switch rooms"
                   >
-                    Manage / Exit
+                    <span>Manage / End Fleet &rarr;</span>
                   </button>
                 )}
               </div>
-            </div>
-            <div className="flex justify-between items-center text-xs font-mono">
+            )}
+
+            <div className="flex justify-between items-center text-xs font-mono pt-1">
               <span className="text-[#8080a0]">Status:</span>
               <span className="text-[#00ff88] font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#00ff88] animate-pulse" />
