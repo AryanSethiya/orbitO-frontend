@@ -30,6 +30,7 @@ interface CommunityModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: UserProfile | null;
+  activeRoomCode?: string | null;
   onRoomJoined: (room: { id: string; code: string; name: string }) => void;
   onRoomLeft?: (communityName: string) => void;
   onRequireAuth: () => void;
@@ -39,6 +40,7 @@ export const CommunityModal: FC<CommunityModalProps> = ({
   isOpen,
   onClose,
   user,
+  activeRoomCode,
   onRoomJoined,
   onRoomLeft,
   onRequireAuth,
@@ -325,7 +327,7 @@ export const CommunityModal: FC<CommunityModalProps> = ({
               ) : (
                 <div className="flex flex-col gap-2.5 max-h-60 overflow-y-auto pr-1">
                   {userRooms.map((room) => {
-                    const isCurrent = user?.community === room.name;
+                    const isCurrent = activeRoomCode ? activeRoomCode === room.code : user?.community === room.name;
                     const isCreator = user?.id && room.creatorId === user.id;
                     const isConfirmingDisband = confirmDisbandCode === room.code;
 

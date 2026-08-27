@@ -246,6 +246,7 @@ export default function App() {
         isOpen={isCommunityOpen}
         onClose={() => setIsCommunityOpen(false)}
         user={user}
+        activeRoomCode={activeRoomCode}
         onRoomJoined={handleRoomJoined}
         onRoomLeft={handleRoomLeft}
         onRequireAuth={() => {
