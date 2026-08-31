@@ -1,140 +1,273 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@config "../tailwind.config.js";
 
 @layer base {
   * {
     box-sizing: border-box;
   }
   body {
-    background-color: #03030c;
-    color: #e2e0fb;
-    font-family: 'Outfit', sans-serif;
+    background-color: #000000;
+    color: #e2e2e2;
+    font-family: 'JetBrains Mono', monospace;
     overflow-x: hidden;
     min-height: 100vh;
-    selection-background-color: #00f0ff;
-    selection-color: #000;
   }
 }
 
-/* Deep Cosmic Nebula Gradients */
-.space-backdrop {
-  position: fixed;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(114, 19, 255, 0.12) 0%, transparent 60%),
-    radial-gradient(circle at 15% 70%, rgba(255, 94, 7, 0.07) 0%, transparent 50%),
-    radial-gradient(circle at 50% 100%, #0c081e 0%, #03030c 100%);
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Layered Starfield */
-.starfield-layers {
-  position: fixed;
-  inset: 0;
+/* Starfield background */
+.starfield-bg {
+  background-color: #000000;
   background-image: 
-    radial-gradient(1px 1px at 15% 15%, #ffffff 100%, transparent),
-    radial-gradient(1.5px 1.5px at 35% 45%, #00f0ff 100%, transparent),
-    radial-gradient(1px 1px at 75% 25%, #ffffff 100%, transparent),
-    radial-gradient(2px 2px at 85% 70%, rgba(255, 181, 154, 0.9) 100%, transparent),
-    radial-gradient(1px 1px at 55% 85%, #ffffff 100%, transparent),
-    radial-gradient(1.5px 1.5px at 25% 80%, #7df4ff 100%, transparent),
-    radial-gradient(1px 1px at 65% 55%, #ffffff 100%, transparent),
-    radial-gradient(2px 2px at 45% 10%, rgba(225, 210, 255, 0.9) 100%, transparent);
-  background-size: 320px 320px;
-  opacity: 0.35;
-  z-index: 0;
+    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 40px 70px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 50px 160px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 90px 40px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 130px 80px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 160px 120px, #ffffff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+/* Sci-fi CRT Scanline */
+.scanline {
+  width: 100%;
+  height: 100px;
+  z-index: 9999;
+  position: fixed;
+  top: 0;
+  left: 0;
   pointer-events: none;
-  animation: starDrift 160s linear infinite;
+  background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(72,255,72,0.1) 50%, rgba(0,0,0,0) 100%);
+  opacity: 0.15;
+  animation: scanline 10s linear infinite;
 }
 
-@keyframes starDrift {
-  from { transform: translateY(0); }
-  to { transform: translateY(-320px); }
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
 }
 
-/* Sci-Fi Glass Panels */
-.cyber-glass {
-  background: linear-gradient(135deg, rgba(25, 25, 48, 0.6) 0%, rgba(10, 10, 25, 0.8) 100%);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 1px solid rgba(255, 255, 255, 0.22);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.cyber-glass-glow {
-  background: linear-gradient(135deg, rgba(30, 30, 60, 0.7) 0%, rgba(12, 12, 30, 0.85) 100%);
-  backdrop-filter: blur(32px);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  box-shadow: 0 0 35px rgba(0, 240, 255, 0.15), inset 0 0 20px rgba(0, 240, 255, 0.05);
-}
-
-/* Radar Sweep Line Animation */
-.radar-sweep {
+.hud-scanline {
   position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg at 50% 50%, rgba(0, 240, 255, 0) 0deg, rgba(0, 240, 255, 0.15) 60deg, transparent 65deg);
-  animation: radarRotate 6s linear infinite;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(72, 255, 72, 0) 0%, rgba(72, 255, 72, 0.05) 50%, rgba(72, 255, 72, 0) 100%);
+  background-size: 100% 4px;
   pointer-events: none;
+  z-index: 40;
+  opacity: 0.3;
 }
 
-@keyframes radarRotate {
-  100% { transform: rotate(360deg); }
+/* Glass Panels */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Terminal Scanline & CRT Effect */
-.terminal-screen {
-  background: #080816;
-  border: 1px solid rgba(0, 240, 255, 0.25);
+.active-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(72, 255, 72, 0.3);
+  box-shadow: 0 0 15px rgba(72, 255, 72, 0.05);
+}
+
+/* Glitch Button & Hover Effects */
+.glitch-hover:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px 0px rgba(72, 255, 72, 0.5);
+  transition: all 0.1s ease-in-out;
+}
+
+.btn-glitch {
   position: relative;
+  background: #48ff48;
+  color: #000000;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  font-weight: 700;
+  border: none;
   overflow: hidden;
+  transition: all 0.2s ease;
 }
 
-.terminal-screen::after {
-  content: " ";
-  display: block;
+.btn-glitch:hover {
+  box-shadow: 2px 2px 0px rgba(255, 255, 255, 0.5), -2px -2px 0px rgba(72, 255, 72, 0.8);
+  transform: translate(-1px, 1px);
+}
+
+/* Custom Input Glow */
+.input-glow:focus {
+  box-shadow: 0 2px 0 0 rgba(72, 255, 72, 1);
+  outline: none;
+}
+
+/* Orbital animation */
+@keyframes rotate-orbit {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes rotate-orbit-reverse {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+.orbit-ring {
+  border-radius: 50%;
   position: absolute;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-  background-size: 100% 3px;
-  z-index: 2;
-  pointer-events: none;
-  opacity: 0.6;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
-/* Neon Glow Utilities */
-.glow-cyan {
-  text-shadow: 0 0 12px rgba(0, 240, 255, 0.7), 0 0 25px rgba(0, 240, 255, 0.3);
+.orbit-1 { 
+  width: 140px; 
+  height: 140px; 
+  border: 1px dashed rgba(72, 255, 72, 0.4); 
+  animation: rotate-orbit 20s linear infinite; 
 }
 
-.glow-orange {
-  text-shadow: 0 0 12px rgba(255, 94, 7, 0.7), 0 0 25px rgba(255, 94, 7, 0.3);
+.orbit-2 { 
+  width: 240px; 
+  height: 240px; 
+  border: 1px solid rgba(255, 255, 255, 0.15); 
+  animation: rotate-orbit-reverse 35s linear infinite; 
 }
 
-.box-glow-cyan {
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.35), inset 0 0 15px rgba(0, 240, 255, 0.15);
+.orbit-3 { 
+  width: 340px; 
+  height: 340px; 
+  border: 1px dotted rgba(72, 255, 72, 0.3); 
+  animation: rotate-orbit 50s linear infinite; 
 }
 
-.box-glow-supernova {
-  box-shadow: 0 0 45px rgba(255, 94, 7, 0.35), 0 0 80px rgba(255, 140, 0, 0.15);
+/* Node pulse */
+@keyframes pulse-node {
+  0% { box-shadow: 0 0 0 0 rgba(72, 255, 72, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(72, 255, 72, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(72, 255, 72, 0); }
 }
 
-/* Custom Sleek Scrollbar */
+.target-node {
+  background-color: #48ff48;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  animation: pulse-node 2s infinite;
+}
+
+/* Grid & Telemetry specific utilities */
+.telemetry-corner {
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.1em;
+}
+
+.corner-tl { top: 8px; left: 8px; }
+.corner-tr { top: 8px; right: 8px; }
+.corner-bl { bottom: 8px; left: 8px; }
+.corner-br { bottom: 8px; right: 8px; }
+
+/* Pulse Animation for Status */
+@keyframes pulse-status {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-status 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Table Row Hover Light Leak */
+.telemetry-row {
+  transition: all 0.15s ease-in-out;
+}
+
+.telemetry-row:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 2px 0 0 0 #48ff48;
+}
+
+/* User Active Row */
+.telemetry-row.active-pilot {
+  background-color: rgba(72, 255, 72, 0.06);
+  border-left: 3px solid #48ff48;
+}
+
+/* Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(8, 8, 22, 0.5);
+  background: rgba(255, 255, 255, 0.03);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.25);
-  border-radius: 9999px;
+  background: rgba(72, 255, 72, 0.3);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.6);
+  background: rgba(72, 255, 72, 0.6);
+}
+
+/* Radar Scanner 360 Sweep Beam & Line */
+@keyframes radar-sweep {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes radar-line-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-scanner-beam {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(from 0deg, rgba(72, 255, 72, 0.28) 0deg, rgba(72, 255, 72, 0.08) 40deg, transparent 75deg, transparent 360deg);
+  animation: radar-sweep 4.5s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.radar-sweep-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 1.5px;
+  background: linear-gradient(90deg, #48ff48 0%, rgba(72, 255, 72, 0.8) 50%, transparent 100%);
+  transform-origin: 0% 50%;
+  animation: radar-line-sweep 4.5s linear infinite;
+  box-shadow: 0 0 10px #48ff48;
+  pointer-events: none;
+  z-index: 11;
 }

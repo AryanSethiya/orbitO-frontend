@@ -1,11 +1,9 @@
 import type { GuessResponse, HintResponse, RoastResponse, LeaderboardResponse, UserProfile } from '../types/game';
 
-const LOCAL_URL = 'http://127.0.0.1:3000';
-const PROD_URL = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://orbito-backend-zacg.onrender.com').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
-
-// Primary URL defaults to local when developing locally, with graceful fallback
-const RAW_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? LOCAL_URL : PROD_URL;
-const BASE_URL = RAW_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+const PROD_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://orbito-backend-zacg.onrender.com')
+  .replace(/\/api\/v1\/?$/, '')
+  .replace(/\/$/, '');
+const BASE_URL = PROD_URL;
 
 export class ApiClient {
   private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -32,14 +30,6 @@ export class ApiClient {
       }
       return (await res.json()) as T;
     } catch (err: any) {
-      // If local request failed and we are not already on prod, try prod fallback
-      if (BASE_URL === LOCAL_URL) {
-        try {
-          const fallbackUrl = `${PROD_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api/v1${endpoint}`;
-          const res = await fetch(fallbackUrl, { ...options, headers });
-          if (res.ok) return (await res.json()) as T;
-        } catch {}
-      }
       throw err;
     }
   }

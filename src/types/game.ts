@@ -70,7 +70,7 @@ export interface AIRoast {
 }
 
 export interface LeaderboardEntry {
-  rank: number;
+  rank?: number;
   userId: string;
   username: string;
   name?: string;
@@ -78,8 +78,10 @@ export interface LeaderboardEntry {
   community: string;
   score: number;
   guessesCount: number;
-  hintsUsed: number;
+  hintsUsed?: number;
   completedAt?: string;
+  status?: string;
+  solved?: boolean;
 }
 
 export interface LeaderboardResponse {

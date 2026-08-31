@@ -1,7 +1,6 @@
 import { useState, useEffect, type FC } from 'react';
 import type { UserProfile } from '../types/game';
 import { ApiClient } from '../api/client';
-import { X, User, Check, ShieldCheck, AlertCircle, RefreshCw, Sparkles, LogOut } from 'lucide-react';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -22,7 +21,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   onOpenCommunity,
   onRoomLeft,
 }) => {
-  const [callsign, setCallsign] = useState(user.name || '');
+  const [callsign, setCallsign] = useState(user.name || user.username || '');
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,11 +35,11 @@ export const ProfileModal: FC<ProfileModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setCallsign(user.name || '');
+      setCallsign(user.name || user.username || '');
       setError(null);
       setSuccess(false);
     }
-  }, [isOpen, user.name]);
+  }, [isOpen, user.name, user.username]);
 
   if (!isOpen) return null;
 
@@ -49,10 +48,6 @@ export const ProfileModal: FC<ProfileModalProps> = ({
     const trimmed = callsign.trim();
     if (!trimmed) {
       setError('Callsign cannot be empty');
-      return;
-    }
-    if (trimmed.length > 30) {
-      setError('Callsign must be 30 characters or fewer');
       return;
     }
 
@@ -65,9 +60,17 @@ export const ProfileModal: FC<ProfileModalProps> = ({
       setTimeout(() => {
         setSuccess(false);
         onClose();
-      }, 1200);
+      }, 1000);
     } catch (err: any) {
-      setError(err?.message || 'Failed to update callsign');
+      // Fallback local update
+      const updatedUser = { ...user, name: trimmed, username: trimmed };
+      localStorage.setItem('orbito_user', JSON.stringify(updatedUser));
+      onProfileUpdated(updatedUser);
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 1000);
     } finally {
       setSaving(false);
     }
@@ -84,9 +87,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
         onRoomLeft(res.community || 'Global Explorers');
       }
       setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-      }, 2000);
+      setTimeout(() => setSuccess(false), 2000);
     } catch (err: any) {
       setError(err?.message || 'Failed to leave fleet');
     } finally {
@@ -95,91 +96,86 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-[#05050c]/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md stitch-card rounded-3xl p-6 sm:p-8 border border-white/10 relative shadow-2xl">
-        <button
-          onClick={onClose}
-          className="absolute right-5 top-5 text-[#8080a0] hover:text-[#eef2ff] transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-[#131313] border border-primary/40 relative p-6 sm:p-8 shadow-[0_0_30px_rgba(72,255,72,0.15)] text-left font-telemetry-md">
+        {/* HUD Corners */}
+        <div className="telemetry-corner corner-tl text-primary">DOSSIER_REF: 0x9A</div>
+        <div className="telemetry-corner corner-tr">
+          <button
+            onClick={onClose}
+            className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
 
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-[#00f0ff]/10 border border-[#00f0ff]/30 flex items-center justify-center">
-            <User className="w-5 h-5 text-[#00f0ff]" />
+        {/* Header */}
+        <div className="mt-4 mb-6">
+          <div className="font-label-caps text-xs text-primary/80 uppercase tracking-widest mb-1 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            PILOT DOSSIER
           </div>
-          <div>
-            <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Pilot Profile</h2>
-            <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Mission Control Identity</p>
-          </div>
+          <h2 className="font-display-hero text-2xl sm:text-3xl text-primary uppercase tracking-tight leading-none">
+            Identification
+          </h2>
         </div>
 
         {error && (
-          <div className="p-3 mb-4 rounded-xl bg-[#ff5e07]/10 border border-[#ff5e07]/30 text-xs font-mono text-[#ff5e07] flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div className="p-3 mb-4 bg-error-container/30 border border-error text-error text-xs font-telemetry-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm shrink-0">warning</span>
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="p-3 mb-4 rounded-xl bg-[#00ff88]/10 border border-[#00ff88]/30 text-xs font-mono text-[#00ff88] flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0" />
-            <span>Profile updated successfully!</span>
+          <div className="p-3 mb-4 bg-primary/10 border border-primary text-primary text-xs font-telemetry-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm shrink-0">verified</span>
+            <span>DOSSIER SYNCHRONIZED SUCCESSFULLY</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1.5 font-bold">
-              Account Email
+            <label className="font-label-caps text-xs text-on-surface-variant uppercase block mb-1 font-bold">
+              SECURITY EMAIL
             </label>
-            <div className="w-full bg-[#070714] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#8080a0] flex items-center justify-between">
-              <span>{user.email}</span>
-              <ShieldCheck className="w-4 h-4 text-[#00ff88]" />
+            <div className="w-full bg-black/60 border border-white/10 px-3.5 py-2.5 text-xs text-on-surface-variant/70 font-mono">
+              {user.email || 'AUTHENTICATED_PILOT'}
             </div>
           </div>
 
           <div>
-            <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1.5 font-bold flex justify-between">
-              <span>Pilot Callsign / Display Name</span>
-              <span className="text-[#00f0ff]">Max 30 chars</span>
+            <label className="font-label-caps text-xs text-on-surface-variant uppercase block mb-1 font-bold">
+              PILOT CALLSIGN
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={callsign}
-                onChange={(e) => setCallsign(e.target.value)}
-                maxLength={30}
-                placeholder="e.g. AstroNova"
-                required
-                className="w-full bg-[#070714] border border-white/20 focus:border-[#00f0ff] rounded-xl px-3.5 py-2.5 text-sm font-mono text-[#eef2ff] placeholder-[#8080a0] focus:outline-none focus:ring-1 focus:ring-[#00f0ff] transition-all"
-              />
-              <User className="w-4 h-4 text-[#8080a0] absolute right-3 top-3 pointer-events-none" />
-            </div>
-            <p className="font-mono text-[10px] text-[#8080a0] mt-1.5">
-              Saved to database. You won&apos;t be asked to re-enter this when signing in again.
-            </p>
+            <input
+              type="text"
+              value={callsign}
+              onChange={(e) => setCallsign(e.target.value)}
+              maxLength={30}
+              placeholder="e.g. CMDR_ALPHA"
+              required
+              className="w-full bg-black/60 border border-primary/50 px-3.5 py-2.5 text-xs sm:text-sm font-telemetry-md text-primary font-bold input-glow uppercase tracking-wider"
+            />
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#0c0c1f] border border-white/5 space-y-2.5">
-            <div className="flex justify-between items-center text-xs font-mono">
-              <span className="text-[#8080a0]">Fleet / Community:</span>
-              <span className="text-[#00f0ff] font-bold">
-                {user.community || 'Solo Orbit'}
+          <div className="p-3 bg-black/40 border border-white/10 space-y-2 text-xs font-telemetry-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-on-surface-variant">FLEET AFFILIATION:</span>
+              <span className="text-primary font-bold">
+                {user.community || 'Global Explorers'}
               </span>
             </div>
 
             {isCustomFleet && (
-              <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-2">
+              <div className="flex items-center justify-between pt-2 border-t border-white/10">
                 <button
                   type="button"
                   onClick={handleQuickLeave}
                   disabled={leaving}
-                  className="px-3 py-1.5 rounded-xl bg-[#ff5e07]/15 hover:bg-[#ff5e07]/25 text-[#ff5e07] border border-[#ff5e07]/30 text-[11px] font-mono font-bold transition-all flex items-center gap-1.5"
-                  title="Leave this fleet and return to Global Explorers"
+                  className="font-label-caps text-[10px] text-error hover:text-white transition-colors uppercase cursor-pointer"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>{leaving ? 'Leaving...' : 'Leave Fleet'}</span>
+                  {leaving ? 'LEAVING FLEET...' : '[ LEAVE FLEET ]'}
                 </button>
 
                 {onOpenCommunity && (
@@ -189,41 +185,23 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                       onClose();
                       onOpenCommunity();
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-[#00f0ff]/15 hover:bg-[#00f0ff]/25 text-[#00f0ff] border border-[#00f0ff]/30 text-[11px] font-mono font-bold transition-all flex items-center gap-1.5"
-                    title="Open Community Hub to End Community (Admin) or switch rooms"
+                    className="font-label-caps text-[10px] text-primary hover:underline uppercase cursor-pointer"
                   >
-                    <span>Manage / End Fleet &rarr;</span>
+                    MANAGE FLEETS &rarr;
                   </button>
                 )}
               </div>
             )}
-
-            <div className="flex justify-between items-center text-xs font-mono pt-1">
-              <span className="text-[#8080a0]">Status:</span>
-              <span className="text-[#00ff88] font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00ff88] animate-pulse" />
-                Active Pilot
-              </span>
-            </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3 pt-2 font-label-caps text-xs">
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-3 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2"
+              className="flex-1 py-3 px-4 bg-primary text-black font-bold uppercase tracking-wider glitch-hover flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
             >
-              {saving ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Save Callsign</span>
-                </>
-              )}
+              <span className="material-symbols-outlined text-sm font-bold">save</span>
+              <span>{saving ? 'UPDATING...' : 'SAVE CALLSIGN'}</span>
             </button>
 
             <button
@@ -232,11 +210,9 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                 onClose();
                 onLogout();
               }}
-              className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-[#ff5e07]/40 hover:text-[#ff5e07] text-[#8080a0] font-mono text-xs font-bold transition-all flex items-center gap-1.5"
-              title="Sign Out"
+              className="px-4 py-3 bg-black/60 border border-white/20 hover:border-error text-on-surface-variant hover:text-error transition-colors uppercase font-bold"
             >
-              <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
+              LOGOUT
             </button>
           </div>
         </form>

@@ -3,90 +3,85 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ORBITO // The Semantic Word Game</title>
-    <!-- Tailwind CSS CDN with forms and container queries -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>ORBITO // Retro-SciFi Semantic Word Exploration</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <!-- Tailwind CSS with custom theme -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
       tailwind.config = {
         darkMode: "class",
         theme: {
           extend: {
             colors: {
-              background: "#07070f",
-              surface: "#0e0e1a",
-              "surface-card": "#121224",
-              "surface-border": "#1f1f38",
-              primary: "#00f0ff",
-              "primary-glow": "rgba(0, 240, 255, 0.4)",
-              secondary: "#ff5e07",
-              "secondary-glow": "rgba(255, 94, 7, 0.4)",
-              amber: "#ff9d00",
-              "text-dim": "#8080a0",
-              "text-bright": "#eef2ff",
+              "surface-container-highest": "#353535",
+              "on-primary-fixed": "#002201",
+              "on-background": "#e2e2e2",
+              "secondary-fixed-dim": "#c8c6c5",
+              "surface": "#131313",
+              "surface-container-lowest": "#0e0e0e",
+              "on-tertiary-fixed-variant": "#00513f",
+              "surface-bright": "#393939",
+              "surface-container-high": "#2a2a2a",
+              "inverse-on-surface": "#303030",
+              "inverse-surface": "#e2e2e2",
+              "error": "#ffb4ab",
+              "on-secondary-container": "#b7b5b4",
+              "primary-container": "#48ff48",
+              "tertiary-fixed": "#24ffcd",
+              "tertiary-container": "#00fbc9",
+              "secondary-container": "#474746",
+              "on-primary-fixed-variant": "#005307",
+              "surface-dim": "#131313",
+              "on-tertiary-fixed": "#002118",
+              "tertiary-fixed-dim": "#00e0b3",
+              "on-secondary-fixed": "#1c1b1b",
+              "inverse-primary": "#006e0c",
+              "surface-tint": "#20e52f",
+              "outline-variant": "#3c4b37",
+              "primary-fixed": "#75ff69",
+              "surface-variant": "#353535",
+              "secondary": "#c8c6c5",
+              "on-tertiary": "#00382b",
+              "secondary-fixed": "#e5e2e1",
+              "on-error-container": "#ffdad6",
+              "on-secondary-fixed-variant": "#474746",
+              "error-container": "#93000a",
+              "surface-container": "#1f1f1f",
+              "on-secondary": "#313030",
+              "tertiary": "#eefff6",
+              "on-tertiary-container": "#006f58",
+              "on-surface": "#e2e2e2",
+              "background": "#000000",
+              "primary": "#48ff48",
+              "primary-light": "#f3ffea",
+              "on-error": "#690005",
+              "on-primary": "#003a03",
+              "primary-fixed-dim": "#20e52f",
+              "outline": "#85957e",
+              "surface-container-low": "#1b1b1b",
+              "on-surface-variant": "#bbcbb2",
+              "on-primary-container": "#00720d"
             },
             fontFamily: {
-              sans: ["Outfit", "system-ui", "sans-serif"],
-              mono: ["JetBrains Mono", "monospace"],
-            },
-          },
-        },
+              "label-caps": ["JetBrains Mono", "monospace"],
+              "telemetry-md": ["JetBrains Mono", "monospace"],
+              "telemetry-sm": ["JetBrains Mono", "monospace"],
+              "display-hero": ["Archivo Narrow", "sans-serif"],
+              "headline-lg-mobile": ["Archivo Narrow", "sans-serif"],
+              "headline-lg": ["Archivo Narrow", "sans-serif"]
+            }
+          }
+        }
       };
     </script>
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <!-- Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-    <style>
-      body {
-        background-color: #05050c;
-        color: #eef2ff;
-        font-family: Outfit, sans-serif;
-        overflow-x: hidden;
-      }
-      .starfield-bg {
-        position: fixed;
-        inset: 0;
-        background-image: 
-          radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.7) 100%, transparent),
-          radial-gradient(1.5px 1.5px at 30% 60%, rgba(0,240,255,0.8) 100%, transparent),
-          radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,0.6) 100%, transparent),
-          radial-gradient(2px 2px at 85% 75%, rgba(255,94,7,0.7) 100%, transparent),
-          radial-gradient(1px 1px at 50% 90%, rgba(255,255,255,0.5) 100%, transparent),
-          radial-gradient(1.5px 1.5px at 90% 15%, rgba(0,240,255,0.6) 100%, transparent);
-        background-size: 250px 250px;
-        opacity: 0.25;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .nebula-glow {
-        position: fixed;
-        inset: 0;
-        background: 
-          radial-gradient(circle at 50% 10%, rgba(0, 240, 255, 0.08) 0%, transparent 60%),
-          radial-gradient(circle at 85% 85%, rgba(114, 19, 255, 0.12) 0%, transparent 50%),
-          radial-gradient(circle at 10% 70%, rgba(255, 94, 7, 0.06) 0%, transparent 50%);
-        pointer-events: none;
-        z-index: 0;
-      }
-      .stitch-card {
-        background: linear-gradient(180deg, rgba(18, 18, 36, 0.75) 0%, rgba(10, 10, 22, 0.9) 100%);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-top: 1px solid rgba(255, 255, 255, 0.18);
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-      }
-      .stitch-solved-card {
-        background: linear-gradient(180deg, rgba(22, 18, 32, 0.85) 0%, rgba(12, 10, 20, 0.95) 100%);
-        backdrop-filter: blur(30px);
-        border: 1.5px solid rgba(255, 157, 0, 0.6);
-        box-shadow: 0 0 50px rgba(255, 157, 0, 0.25), inset 0 0 30px rgba(255, 157, 0, 0.05);
-      }
-    </style>
-    <script type="module" crossorigin src="/assets/index-DbINSGiT.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-FqZGHTms.css">
+    <script type="module" crossorigin src="/assets/index-ODg5tzZq.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Ci82Y0qV.css">
   </head>
-  <body class="bg-[#05050c] text-[#eef2ff] min-h-screen">
+  <body class="bg-black text-[#e2e2e2] min-h-screen overflow-x-hidden selection:bg-[#48ff48] selection:text-black">
     <div id="root"></div>
   </body>
 </html>

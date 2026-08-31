@@ -2,7 +2,7 @@ import { useState, type FC } from 'react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { ApiClient } from '../api/client';
 import type { UserProfile } from '../types/game';
-import { X, Shield, AlertCircle, UserCheck, Rocket, CheckCircle2 } from 'lucide-react';
+import { Shield, AlertCircle, X, CheckCircle2, Rocket } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -28,9 +28,8 @@ function parseJwt(token: string) {
 }
 
 export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-  const [step, setStep] = useState<'google' | 'callsign'>('google');
-  const [pendingUser, setPendingUser] = useState<UserProfile | null>(null);
-  const [pilotName, setPilotName] = useState('');
+  const [authMethod, setAuthMethod] = useState<'google' | 'callsign'>('google');
+  const [callsignInput, setCallsignInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +46,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
       setError(null);
       const payload = parseJwt(credentialResponse.credential);
       const userEmail = payload?.email;
-      const initialName = payload?.name || payload?.given_name || 'Orbital Pilot';
+      const initialName = payload?.name || payload?.given_name || 'Pilot';
       const picture = payload?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(initialName)}`;
       const googleId = payload?.sub;
 
@@ -63,15 +62,8 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
       localStorage.setItem('orbito_user', JSON.stringify(res.user));
       localStorage.setItem('orbito_player_id', res.user.id);
 
-      // ONLY ask for pilot callsign if this is their first-time login
-      if (res.isNewUser) {
-        setPendingUser(res.user);
-        setPilotName(res.user.name || initialName);
-        setStep('callsign');
-      } else {
-        onLoginSuccess(res.user);
-        onClose();
-      }
+      onLoginSuccess(res.user);
+      onClose();
     } catch (err: any) {
       console.error('Google login error:', err);
       setError(err.message || 'Google authentication failed. Please try again.');
@@ -80,144 +72,158 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess 
     }
   };
 
-  const handleConfirmCallsign = async (e: React.FormEvent) => {
+  const handleCallsignLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pendingUser) return;
+    const trimmed = callsignInput.trim();
+    if (!trimmed) return;
 
-    const trimmedName = pilotName.trim() || pendingUser.name || 'Orbital Pilot';
+    const pilotUser: UserProfile = {
+      id: 'pilot_' + Math.random().toString(36).substring(2, 9),
+      email: `${trimmed.toLowerCase().replace(/\s+/g, '_')}@orbito.system`,
+      username: trimmed,
+      name: trimmed,
+      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(trimmed)}`,
+      community: 'Global Explorers',
+    };
 
+    localStorage.setItem('orbito_user', JSON.stringify(pilotUser));
+    localStorage.setItem('orbito_player_id', pilotUser.id);
+    onLoginSuccess(pilotUser);
+    onClose();
+
+    // Background sync with backend
     try {
-      setLoading(true);
-      setError(null);
-
-      let finalUser = pendingUser;
-      if (trimmedName !== pendingUser.name) {
-        try {
-          const updateRes = await ApiClient.updateProfile(pendingUser.id, trimmedName);
-          finalUser = updateRes.user;
-        } catch {
-          finalUser = { ...pendingUser, name: trimmedName };
-        }
+      const res = await ApiClient.devLogin(trimmed);
+      if (res.token) {
+        localStorage.setItem('orbito_auth_token', res.token);
       }
-
-      localStorage.setItem('orbito_user', JSON.stringify(finalUser));
-      onLoginSuccess(finalUser);
-      onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update pilot callsign.');
-    } finally {
-      setLoading(false);
-    }
+    } catch {}
   };
 
   return (
-    <div className="fixed inset-0 bg-[#05050c]/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md stitch-card rounded-3xl p-6 sm:p-8 border border-white/10 relative shadow-2xl">
-        <button
-          onClick={onClose}
-          className="absolute right-5 top-5 text-[#8080a0] hover:text-[#eef2ff] transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-[#131313] border border-primary/40 relative p-6 sm:p-8 shadow-[0_0_30px_rgba(72,255,72,0.2)] text-left font-telemetry-md">
+        {/* HUD Corners */}
+        <div className="telemetry-corner corner-tl text-primary font-mono text-[10px]">AUTH_GATE // GOOGLE_CLEARANCE</div>
+        <div className="telemetry-corner corner-tr">
+          <button
+            onClick={onClose}
+            className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Title */}
+        <div className="mt-4 mb-5">
+          <div className="font-label-caps text-xs text-primary/80 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            PILOT IDENTIFICATION REQUIRED
+          </div>
+          <h2 className="font-display-hero text-2xl sm:text-3xl text-white uppercase tracking-tight leading-none">
+            {authMethod === 'google' ? 'Sign In with Google' : 'Pilot Callsign Access'}
+          </h2>
+          <p className="font-telemetry-sm text-xs text-on-surface-variant/70 mt-2">
+            Authenticate to enter Mission Control, calculate semantic proximity, and record telemetry.
+          </p>
+        </div>
+
+        {/* Tab switchers */}
+        <div className="flex border-b border-white/10 mb-5 font-mono text-xs">
+          <button
+            onClick={() => setAuthMethod('google')}
+            className={`flex-1 py-2 text-center uppercase tracking-wider transition-all cursor-pointer font-bold ${
+              authMethod === 'google'
+                ? 'border-b-2 border-primary text-primary bg-primary/5'
+                : 'text-on-surface-variant hover:text-white'
+            }`}
+          >
+            Google OAuth
+          </button>
+          <button
+            onClick={() => setAuthMethod('callsign')}
+            className={`flex-1 py-2 text-center uppercase tracking-wider transition-all cursor-pointer font-bold ${
+              authMethod === 'callsign'
+                ? 'border-b-2 border-primary text-primary bg-primary/5'
+                : 'text-on-surface-variant hover:text-white'
+            }`}
+          >
+            Callsign Login
+          </button>
+        </div>
 
         {error && (
-          <div className="p-3 mb-4 rounded-xl bg-[#ff5e07]/10 border border-[#ff5e07]/30 text-xs font-mono text-[#ff5e07] flex items-center gap-2 text-left">
+          <div className="p-3 mb-4 bg-error-container/30 border border-error text-error text-xs font-telemetry-sm flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        {step === 'google' && (
-          <div>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-full bg-[#00f0ff]/20 border border-[#00f0ff] flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[#00f0ff]" />
+        {authMethod === 'google' ? (
+          <div className="space-y-4">
+            {/* Google Login Box */}
+            <div className="bg-black/60 p-5 border border-white/10 flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/40 flex items-center justify-center mb-3">
+                <Shield className="w-5 h-5 text-primary" />
               </div>
-              <div className="text-left">
-                <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Pilot Verification</h2>
-                <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-wider">Strict Google OAuth 2.0</p>
-              </div>
-            </div>
 
-            <div className="w-full flex flex-col items-center justify-center bg-[#0c0c1f] p-4 rounded-2xl border border-[#00f0ff]/20">
-              <label className="font-mono text-[10px] text-[#00f0ff] uppercase block mb-3 font-bold tracking-wider">
-                Sign in with Google Account
+              <label className="font-label-caps text-xs text-white uppercase block mb-3 font-bold tracking-wider">
+                AUTHORIZE VIA GOOGLE
               </label>
+
               {loading ? (
-                <div className="py-2.5 font-mono text-xs text-[#00f0ff] animate-pulse font-bold">
-                  Verifying Google Credentials...
+                <div className="py-3 font-telemetry-sm text-xs text-primary animate-pulse font-bold flex items-center gap-2">
+                  <span className="material-symbols-outlined animate-spin text-sm">sync</span>
+                  <span>SYNCHRONIZING WITH SYSTEM COMMAND...</span>
                 </div>
               ) : (
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => setError('Google Sign-In prompt closed or failed.')}
-                  theme="filled_black"
-                  shape="pill"
-                  size="large"
-                  text="continue_with"
-                  width="100%"
-                />
+                <div className="w-full flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setError('Google clearance cancelled or rejected. Check port 5173.')}
+                    theme="filled_black"
+                    shape="rectangular"
+                    size="large"
+                    text="continue_with"
+                    width={300}
+                  />
+                </div>
               )}
             </div>
 
-            <p className="font-mono text-[9px] text-[#8080a0] mt-3.5 text-center">
-              🔒 Callsign & stats are securely stored in the database.
-            </p>
+            <div className="flex items-center gap-2 text-[10px] font-mono text-on-surface-variant/60">
+              <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
+              <span>Ensure running on <strong>http://localhost:5173/</strong> for Google OAuth authorization.</span>
+            </div>
           </div>
-        )}
-
-        {step === 'callsign' && pendingUser && (
-          <form onSubmit={handleConfirmCallsign} className="text-left">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-full bg-[#00ff88]/20 border border-[#00ff88] flex items-center justify-center">
-                <UserCheck className="w-5 h-5 text-[#00ff88]" />
-              </div>
-              <div>
-                <h2 className="font-mono text-lg font-bold text-[#eef2ff]">Set Pilot Callsign</h2>
-                <div className="flex items-center gap-1 text-[#00ff88] text-[10px] font-mono font-bold">
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>Google Account Linked</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#0c0c1f] border border-white/10 mb-4">
-              <img
-                src={pendingUser.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(pendingUser.name || 'pilot')}`}
-                alt="Pilot Avatar"
-                className="w-9 h-9 rounded-full border border-[#00f0ff]/50 bg-black/40 object-cover"
-              />
-              <div className="flex flex-col overflow-hidden">
-                <span className="font-mono text-xs font-bold text-[#eef2ff] truncate">{pendingUser.name}</span>
-                <span className="font-mono text-[10px] text-[#8080a0] truncate">{pendingUser.email}</span>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="font-mono text-[10px] text-[#8080a0] uppercase block mb-1.5 font-bold">
-                Choose Callsign (Standings Display Name)
+        ) : (
+          <form onSubmit={handleCallsignLogin} className="space-y-4">
+            <div>
+              <label className="font-label-caps text-xs text-white uppercase block mb-1 font-bold">
+                ENTER PILOT CALLSIGN
               </label>
               <input
                 type="text"
-                value={pilotName}
-                onChange={(e) => setPilotName(e.target.value)}
-                placeholder="e.g. Commander Nova"
+                value={callsignInput}
+                onChange={(e) => setCallsignInput(e.target.value)}
+                placeholder="e.g. CMDR_VANGUARD"
                 maxLength={30}
                 required
-                className="w-full bg-[#070714] border border-[#00f0ff]/40 rounded-2xl px-3.5 py-2.5 text-xs font-mono text-[#00f0ff] font-bold focus:outline-none focus:border-[#00f0ff]"
+                autoFocus
+                className="w-full bg-black/60 border border-primary/50 px-3.5 py-2.5 text-xs sm:text-sm font-telemetry-md text-primary font-bold input-glow uppercase tracking-wider"
               />
-              <p className="font-mono text-[9px] text-[#8080a0] mt-1">
-                Saved permanently in database. You can edit this anytime in your profile.
+              <p className="font-telemetry-sm text-[10px] text-on-surface-variant/60 mt-1">
+                Instantly enter Mission Control without Google OAuth credentials.
               </p>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-[#00f0ff] text-[#05050c] font-mono text-xs font-bold uppercase tracking-wider active:scale-95 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all flex items-center justify-center gap-2"
+              disabled={loading || !callsignInput.trim()}
+              className="w-full py-3.5 px-4 bg-primary text-black font-label-caps text-xs font-bold uppercase tracking-wider glitch-hover flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
             >
               <Rocket className="w-4 h-4" />
-              <span>{loading ? 'Saving Callsign...' : 'Confirm Callsign & Enter Orbit 🚀'}</span>
+              <span>{loading ? 'CALIBRATING...' : 'ENTER MISSION CONTROL'}</span>
             </button>
           </form>
         )}
