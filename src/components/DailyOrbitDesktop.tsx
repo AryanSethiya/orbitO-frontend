@@ -532,12 +532,32 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-[#111111] border border-primary/50 p-6 font-mono text-xs shadow-[0_0_40px_rgba(72,255,72,0.15)] relative">
-              <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+              <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-3">
                 <span className="text-primary font-bold uppercase flex items-center gap-1.5">
                   <Lock className="w-4 h-4" />
                   DECRYPTED TELEMETRY ({unlockedHints.length}/3)
                 </span>
                 <button onClick={() => setShowHintsModal(false)} className="text-white hover:text-primary cursor-pointer">✕</button>
+              </div>
+
+              {/* 3D Cyber Cat Mechanic Holding Decryptor Console */}
+              <div className="mb-3.5 relative border border-primary/50 bg-black overflow-hidden group">
+                <img 
+                  src="/cat_holding_hint_decryptor.jpg" 
+                  alt="3D Cat Decryptor" 
+                  className="w-full h-36 object-cover filter transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent flex flex-col justify-end p-2.5 pointer-events-none">
+                  <div className="flex items-center justify-between">
+                    <span className="font-label-caps text-[10px] text-primary font-bold tracking-wider flex items-center gap-1.5 bg-black/80 px-2 py-0.5 border border-primary/40">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+                      3D MECHANIC // QUANTUM MAINFRAME
+                    </span>
+                    <span className="font-mono text-[9px] text-white/80 bg-black/80 px-2 py-0.5 border border-white/20">
+                      LASER RELAY: ACTIVE
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Point Deduction Warning Notice */}
