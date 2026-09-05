@@ -361,9 +361,16 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
                             src={entry.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(entry.name || entry.username || 'pilot')}`}
                           />
                           <div className="flex flex-col">
-                            <span className={`font-bold ${isCurrentUser ? 'text-primary font-label-caps' : 'text-on-surface'}`}>
-                              {isCurrentUser ? `[ YOU ] ${entry.name || entry.username}` : (entry.name || entry.username)}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`font-bold ${isCurrentUser ? 'text-primary font-label-caps' : 'text-on-surface'}`}>
+                                {isCurrentUser ? `[ YOU ] ${entry.name || entry.username}` : (entry.name || entry.username)}
+                              </span>
+                              {entry.isVerified && (
+                                <span className="text-[8px] font-mono px-1 py-0.5 bg-primary/10 border border-primary/40 text-primary uppercase tracking-wider font-black">
+                                  VERIFIED
+                                </span>
+                              )}
+                            </div>
                             {entry.community && (
                               <span className="text-[10px] font-label-caps text-on-surface-variant/60">
                                 {entry.community}

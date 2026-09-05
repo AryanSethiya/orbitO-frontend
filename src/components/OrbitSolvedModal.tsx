@@ -183,30 +183,20 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
       if (sessionId) {
         try {
           await ApiClient.claimSession(sessionId, res.user.id);
-        } catch (claimErr) {
+        } catch (claimErr: any) {
           console.warn('Backend claim note:', claimErr);
+          if (claimErr?.message?.includes('already completed') || claimErr?.message?.includes('locked')) {
+            setClaimError(claimErr.message || 'Daily orbit already completed on this account. First-attempt telemetry is permanently locked.');
+            return;
+          }
         }
       }
 
       if (onClaimCallsign) {
         onClaimCallsign(res.user);
       }
-    } catch (_err) {
-      // Create local validated profile fallback
-      const fallbackUser = {
-        id: 'pilot_' + Math.random().toString(36).substring(2, 9),
-        email: `${cleanCallsign.toLowerCase()}@orbito.site`,
-        username: cleanCallsign,
-        name: cleanCallsign,
-        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanCallsign)}`,
-        community: 'Global Explorers',
-      };
-      localStorage.setItem('orbito_user', JSON.stringify(fallbackUser));
-      setClaimedCallsign(cleanCallsign);
-
-      if (onClaimCallsign) {
-        onClaimCallsign(fallbackUser);
-      }
+    } catch (err: any) {
+      setClaimError(err.message || 'Callsign registration failed. If bound to Google, please sign in with Google.');
     } finally {
       setIsClaiming(false);
     }

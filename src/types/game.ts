@@ -82,6 +82,7 @@ export interface LeaderboardEntry {
   completedAt?: string;
   status?: string;
   solved?: boolean;
+  isVerified?: boolean;
 }
 
 export interface LeaderboardResponse {
