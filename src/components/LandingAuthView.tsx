@@ -90,12 +90,8 @@ export const LandingAuthView: FC<LandingAuthViewProps> = ({ onLoginSuccess }) =>
       // Update callsign in database
       let finalUser = pendingUser;
       if (trimmedName !== pendingUser.name) {
-        try {
-          const updateRes = await ApiClient.updateProfile(pendingUser.id, trimmedName);
-          finalUser = updateRes.user;
-        } catch {
-          finalUser = { ...pendingUser, name: trimmedName };
-        }
+        const updateRes = await ApiClient.updateProfile(pendingUser.id, trimmedName);
+        finalUser = updateRes.user;
       }
 
       localStorage.setItem('orbito_user', JSON.stringify(finalUser));

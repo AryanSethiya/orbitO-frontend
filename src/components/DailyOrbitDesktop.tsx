@@ -16,12 +16,14 @@ import {
   Flame,
   AlertOctagon
 } from 'lucide-react';
+import { audioSynth } from '../utils/audioSynth';
 
 interface DailyOrbitDesktopProps {
   guesses: Guess[];
   currentScore: number;
   unlockedHints: string[];
   solved: boolean;
+  isForfeited?: boolean;
   loadingGuess: boolean;
   onSubmitGuess: (word: string) => Promise<void>;
   onRequestHint: () => Promise<void>;
@@ -31,6 +33,7 @@ interface DailyOrbitDesktopProps {
   onTerminateSession?: () => void;
   onForfeitSession?: () => void;
   user?: UserProfile | null;
+  targetWord?: string;
 }
 
 export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
@@ -38,6 +41,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
   currentScore,
   unlockedHints,
   solved,
+  isForfeited = false,
   loadingGuess,
   onSubmitGuess,
   onRequestHint,
@@ -46,8 +50,10 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
   onTerminateSession,
   onForfeitSession,
   user,
+  targetWord,
 }) => {
   const [inputVector, setInputVector] = useState('');
+  const [pendingVector, setPendingVector] = useState<string | null>(null);
   const [activeSideTab, setActiveSideTab] = useState<'dashboard' | 'logs' | 'telemetry' | 'encryption'>('dashboard');
   const [hintLoading, setHintLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -57,6 +63,37 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
   const [showTerminateConfirm, setShowTerminateConfirm] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const prevGuessesLengthRef = useRef(guesses.length);
+
+  // Global Hotkey: Press '/' anywhere on screen to immediately focus coordinate input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeElement = document.activeElement;
+      const isInputActive = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
+      if (e.key === '/' && !isInputActive && !solved) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      } else if (e.key === 'Escape' && isInputActive) {
+        (activeElement as HTMLElement)?.blur();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [solved]);
+
+  // Audio feedback: Play acoustic proximity lock chime whenever a new vector lands
+  useEffect(() => {
+    if (guesses.length > prevGuessesLengthRef.current) {
+      const latest = guesses[guesses.length - 1];
+      if (latest) {
+        const tier = latest.rank === 1 ? 'CENTER' : latest.rank <= 100 ? 'HOT' : latest.rank <= 500 ? 'WARM' : 'COLD';
+        audioSynth.playProximityLock(tier);
+      }
+    }
+    prevGuessesLengthRef.current = guesses.length;
+  }, [guesses]);
 
   // Auto-scroll transmission log
   useEffect(() => {
@@ -69,8 +106,10 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
     e.preventDefault();
     const trimmed = inputVector.trim().toUpperCase();
     if (!trimmed || loadingGuess || solved) return;
+    setPendingVector(trimmed);
     setInputVector('');
     setStatusMessage(`TRANSMITTING VECTOR: [${trimmed}]...`);
+    audioSynth.playTransmitBeep();
     try {
       await onSubmitGuess(trimmed);
       setStatusMessage(null);
@@ -78,6 +117,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
       setStatusMessage(`TRANSMISSION ERROR: ${err?.message || 'FAILED'}`);
       setTimeout(() => setStatusMessage(null), 3000);
     } finally {
+      setPendingVector(null);
       if (inputRef.current) inputRef.current.focus();
     }
   };
@@ -87,6 +127,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
     try {
       setHintLoading(true);
       await onRequestHint();
+      audioSynth.playHintChime();
       setShowHintsModal(true);
     } finally {
       setHintLoading(false);
@@ -276,10 +317,19 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
               FREQ: 1420.4 MHz • GRID: AU
             </div>
             <div className="telemetry-corner corner-bl text-[10px] text-on-surface-variant/60 font-mono z-20">
-              PROBES IN SECTOR: {guesses.length}
+              PROBES IN SECTOR: {guesses.length} {solved ? '(SOLVED)' : ''}
             </div>
             <div className="telemetry-corner corner-br text-[10px] text-primary/70 font-mono z-20">
-              {bestGuess ? `CLOSEST: ${bestGuess.word} (#${bestGuess.rank})` : 'TARGET: CLASSIFIED'}
+              {solved ? (
+                <span className="text-primary font-bold flex items-center gap-1.5 drop-shadow-[0_0_8px_rgba(72,255,72,0.6)]">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                  TARGET ACQUIRED: {targetWord || bestGuess?.word || 'SOLVED'}
+                </span>
+              ) : bestGuess ? (
+                `CLOSEST: ${bestGuess.word} (#${bestGuess.rank})`
+              ) : (
+                'TARGET: CLASSIFIED'
+              )}
             </div>
 
             {/* Corner Brackets */}
@@ -338,10 +388,22 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                 <span className="absolute left-1 top-1/2 -translate-y-1/2 font-mono text-[8px] text-primary/40">270°</span>
 
                 {/* Central Bullseye Target Node */}
-                <div className="target-node z-30 shadow-[0_0_20px_#48ff48]"></div>
+                <div className="relative z-30 flex items-center justify-center">
+                  <div className={`target-node ${isForfeited ? 'border-[#EF4444] shadow-[0_0_25px_#EF4444]' : 'shadow-[0_0_25px_#48ff48]'}`}></div>
+                  {solved && (
+                    <div className={`absolute -top-7 px-2.5 py-0.5 bg-black/90 font-mono font-black text-[10px] uppercase tracking-wider whitespace-nowrap animate-bounce flex items-center gap-1.5 ${
+                      isForfeited
+                        ? 'text-[#EF4444] border border-[#EF4444]/80 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
+                        : 'text-primary border border-primary/80 shadow-[0_0_15px_rgba(72,255,72,0.4)]'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isForfeited ? 'bg-[#EF4444]' : 'bg-primary animate-ping'}`}></span>
+                      <span>{targetWord || (isForfeited ? 'ORBIT ABORTED' : 'TARGET ACQUIRED')}</span>
+                    </div>
+                  )}
+                </div>
 
-                {/* Plotted Probe Vectors on Radar */}
-                {guesses.slice(-12).map((g, idx, arr) => {
+                {/* Plotted Probe Vectors on Radar (Excludes redundant target node or Rank 1 when solved/forfeited) */}
+                {guesses.slice(-12).filter(g => !solved || (g.rank !== 1 && g.word.toUpperCase() !== (targetWord || '').toUpperCase())).map((g, idx, arr) => {
                   const { x, y } = getProbeCoordinates(g.rank, idx, arr.length);
                   const isHit = g.rank === 1;
                   const isHot = g.rank <= 100;
@@ -374,41 +436,128 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                     </div>
                   );
                 })}
+
+                {/* Optimistic Radar Probing: Instant Pulsing Trajectory Node */}
+                {loadingGuess && (
+                  (() => {
+                    const pendingAngle = ((guesses.length * 137.5 + 45) % 360) * (Math.PI / 180);
+                    const pendingRadius = 145; // Placed on outer tactical sweep ring
+                    const pendingX = Math.round(Math.cos(pendingAngle) * pendingRadius);
+                    const pendingY = Math.round(Math.sin(pendingAngle) * pendingRadius);
+                    const rotationDeg = Math.round((pendingAngle * 180) / Math.PI) + 180;
+
+                    return (
+                      <div
+                        className="absolute z-30 flex flex-col items-center pointer-events-none transition-all duration-300"
+                        style={{ transform: `translate(${pendingX}px, ${pendingY}px)` }}
+                      >
+                        {/* Dynamic Inward Trajectory Laser Trace pointing towards bullseye */}
+                        <div
+                          className="absolute w-28 h-[1px] bg-gradient-to-r from-primary via-primary/50 to-transparent pointer-events-none animate-pulse"
+                          style={{
+                            transformOrigin: '0% 50%',
+                            transform: `rotate(${rotationDeg}deg)`,
+                          }}
+                        />
+
+                        {/* Dual Expanding Ping Radar Waves */}
+                        <span className="w-6 h-6 rounded-full absolute -top-3 animate-ping bg-primary/30" />
+                        <span className="w-3.5 h-3.5 rounded-full absolute -top-1.5 animate-ping bg-primary/80 shadow-[0_0_15px_#48ff48]" />
+                        <span className="w-2 h-2 rounded-full absolute -top-1 bg-white shadow-[0_0_10px_#48ff48]" />
+
+                        {/* High-Visibility Sci-Fi Trajectory Badge */}
+                        <div className="px-2 py-0.5 text-[9px] font-mono font-black border border-primary text-primary bg-black/95 shadow-[0_0_20px_rgba(72,255,72,0.7)] flex items-center gap-1.5 whitespace-nowrap animate-pulse mt-2 z-30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+                          <span>TRANSMITTING... [{pendingVector || 'PROBE'}]</span>
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
               </div>
             </div>
 
-            {/* Seamless Bottom Input Console */}
-            <div className="w-full max-w-xl z-20 bg-black/85 border border-white/15 p-3.5 backdrop-blur-md relative mt-3 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-              <form onSubmit={handleTransmit} className="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-                <div className="relative flex-1 w-full">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    disabled={loadingGuess || solved}
-                    value={inputVector}
-                    onChange={(e) => setInputVector(e.target.value)}
-                    placeholder="ENTER COORDINATE (E.G. PLANET)"
-                    className="w-full bg-black/80 border border-white/25 focus:border-primary text-center sm:text-left px-4 py-2.5 font-display-hero text-base sm:text-lg text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm focus:ring-0 input-glow transition-all uppercase tracking-wider disabled:opacity-50"
-                    autoFocus
-                  />
+            {/* Seamless Bottom Input / Mission Concluded Console */}
+            {solved ? (
+              <div className={`w-full max-w-xl z-20 p-4 backdrop-blur-md relative mt-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-left ${
+                isForfeited
+                  ? 'bg-[#180a0a]/95 border-2 border-[#B91C1C]/70 shadow-[0_0_40px_rgba(185,28,28,0.35)]'
+                  : 'bg-[#0a140d]/95 border-2 border-primary/60 shadow-[0_0_40px_rgba(72,255,72,0.3)]'
+              }`}>
+                <div>
+                  <div className={`text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5 font-bold ${
+                    isForfeited ? 'text-[#EF4444]' : 'text-primary'
+                  }`}>
+                    {isForfeited ? (
+                      <>
+                        <AlertTriangle className="w-3.5 h-3.5 text-[#EF4444]" />
+                        <span>MISSION FORFEITED // TARGET UNSEALED</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                        <span>MISSION ACCOMPLISHED // CENTER ORBIT LOCKED</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="font-display-hero text-xl sm:text-2xl text-white uppercase font-black tracking-wider mt-0.5">
+                    TARGET: <span className={isForfeited ? 'text-[#EF4444] drop-shadow-[0_0_10px_rgba(239,68,68,0.6)]' : 'text-primary drop-shadow-[0_0_10px_#48ff48]'}>{targetWord || 'DECIPHERED'}</span>
+                  </div>
+                  <div className="font-mono text-[10px] text-white/60 mt-0.5">
+                    {guesses.length} PROBES TRANSMITTED • {isForfeited ? '0 CR (ABORTED)' : `${currentScore} CR CREDITS RECORDED`}
+                  </div>
                 </div>
 
                 <button
-                  type="submit"
-                  disabled={loadingGuess || solved || !inputVector.trim()}
-                  className="w-full sm:w-auto bg-[#48ff48] hover:bg-white text-black font-label-caps text-xs font-bold py-3 px-6 uppercase tracking-wider glitch-hover transition-all inline-flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(72,255,72,0.4)] disabled:opacity-50 shrink-0"
+                  type="button"
+                  onClick={onShowRoast}
+                  className={`w-full sm:w-auto font-label-caps text-xs font-black py-3 px-5 uppercase tracking-wider transition-all glitch-hover shrink-0 cursor-pointer flex items-center justify-center gap-2 ${
+                    isForfeited
+                      ? 'bg-[#991B1B] hover:bg-[#B91C1C] text-white shadow-[0_0_20px_rgba(185,28,28,0.5)]'
+                      : 'bg-primary hover:bg-white text-black shadow-[0_0_20px_rgba(72,255,72,0.5)]'
+                  }`}
                 >
-                  <Target className="w-4 h-4 font-bold" />
-                  <span>{loadingGuess ? 'TRANSMITTING...' : 'TRANSMIT VECTOR'}</span>
+                  <Flame className={`w-4 h-4 ${isForfeited ? 'text-white' : 'text-black'}`} />
+                  <span>{isForfeited ? 'VIEW DEBRIEF CONSOLE' : 'VIEW MISSION DEBRIEF'}</span>
                 </button>
-              </form>
+              </div>
+            ) : (
+              <div className="w-full max-w-xl z-20 bg-black/85 border border-white/15 p-3.5 backdrop-blur-md relative mt-3 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+                <form onSubmit={handleTransmit} className="flex flex-col sm:flex-row items-center gap-2.5 w-full">
+                  <div className="relative flex-1 w-full">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      disabled={loadingGuess}
+                      value={inputVector}
+                      onChange={(e) => setInputVector(e.target.value)}
+                      placeholder="ENTER COORDINATE (E.G. PLANET)"
+                      className="w-full bg-black/80 border border-white/25 focus:border-primary text-center sm:text-left px-4 py-2.5 font-display-hero text-base sm:text-lg text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm focus:ring-0 input-glow transition-all uppercase tracking-wider disabled:opacity-50 pr-24"
+                      autoFocus
+                    />
+                    <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-1 font-mono text-[9px] text-white/40 border border-white/20 px-1.5 py-0.5 pointer-events-none bg-black/70">
+                      <span>KEY</span>
+                      <span className="text-primary font-bold">/</span>
+                    </div>
+                  </div>
 
-              {statusMessage && (
-                <div className="mt-2 text-center text-xs font-mono text-primary animate-pulse">
-                  {statusMessage}
-                </div>
-              )}
-            </div>
+                  <button
+                    type="submit"
+                    disabled={loadingGuess || !inputVector.trim()}
+                    className="w-full sm:w-auto bg-[#48ff48] hover:bg-white text-black font-label-caps text-xs font-bold py-3 px-6 uppercase tracking-wider glitch-hover transition-all inline-flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(72,255,72,0.4)] disabled:opacity-50 shrink-0"
+                  >
+                    <Target className="w-4 h-4 font-bold" />
+                    <span>{loadingGuess ? 'TRANSMITTING...' : 'TRANSMIT VECTOR'}</span>
+                  </button>
+                </form>
+
+                {statusMessage && (
+                  <div className="mt-2 text-center text-xs font-mono text-primary animate-pulse">
+                    {statusMessage}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </main>
 
@@ -532,32 +681,12 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-[#111111] border border-primary/50 p-6 font-mono text-xs shadow-[0_0_40px_rgba(72,255,72,0.15)] relative">
-              <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-3">
+              <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
                 <span className="text-primary font-bold uppercase flex items-center gap-1.5">
                   <Lock className="w-4 h-4" />
                   DECRYPTED TELEMETRY ({unlockedHints.length}/3)
                 </span>
                 <button onClick={() => setShowHintsModal(false)} className="text-white hover:text-primary cursor-pointer">✕</button>
-              </div>
-
-              {/* 3D Cyber Cat Mechanic Holding Decryptor Console */}
-              <div className="mb-3.5 relative border border-primary/50 bg-black overflow-hidden group">
-                <img 
-                  src="/cat_holding_hint_decryptor.jpg" 
-                  alt="3D Cat Decryptor" 
-                  className="w-full h-36 object-cover filter transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent flex flex-col justify-end p-2.5 pointer-events-none">
-                  <div className="flex items-center justify-between">
-                    <span className="font-label-caps text-[10px] text-primary font-bold tracking-wider flex items-center gap-1.5 bg-black/80 px-2 py-0.5 border border-primary/40">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
-                      3D MECHANIC // QUANTUM MAINFRAME
-                    </span>
-                    <span className="font-mono text-[9px] text-white/80 bg-black/80 px-2 py-0.5 border border-white/20">
-                      LASER RELAY: ACTIVE
-                    </span>
-                  </div>
-                </div>
               </div>
 
               {/* Point Deduction Warning Notice */}

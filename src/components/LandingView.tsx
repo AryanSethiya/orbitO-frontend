@@ -35,31 +35,31 @@ export const LandingView: FC<LandingViewProps> = ({
             ONE WORD HIDES AT THE<br/>CENTER OF EVERY ORBIT.
           </h1>
 
-          {/* Central 3D Illustration Container with Corner Brackets */}
-          <div className="relative w-full max-w-md aspect-square mb-8 group flex items-center justify-center">
+          {/* Central Illustration Container with Corner Brackets */}
+          <div className="relative w-full max-w-2xl aspect-[16/9] mb-8 group flex items-center justify-center">
             {/* Corner Brackets */}
             <div className="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-white/40"></div>
             <div className="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-white/40"></div>
             <div className="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-white/40"></div>
             <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-white/40"></div>
 
-            {/* 3D Character Illustration */}
+            {/* Illustration */}
             <img 
-              className="w-full h-full object-cover filter drop-shadow-[0_0_25px_rgba(72,255,72,0.3)] rounded-none" 
-              alt="3D Cybernetic Space Operative" 
-              src="/pepe_3d_holding_tablet.jpg"
+              className="w-full h-full object-contain filter drop-shadow-[0_0_20px_rgba(72,255,72,0.25)] rounded-none" 
+              alt="Cybernetic Space Operative" 
+              src="/cyber_pepe_astronaut.jpg"
             />
 
-            {/* Glowing Sign Overlay (Positioned directly over the held 3D holographic frame) */}
-            <div className="absolute bottom-[22%] left-[18%] right-[18%] flex flex-col items-center justify-center pointer-events-none text-center bg-black/80 backdrop-blur-[3px] py-2 px-3 border border-[#48ff48]/70 shadow-[0_0_20px_rgba(72,255,72,0.5)]">
-              <div className="font-label-caps text-[8px] sm:text-[9px] text-[#48ff48]/90 uppercase tracking-widest font-mono flex items-center gap-1 mb-0.5">
+            {/* Glowing Sign Overlay (Positioned directly on the cyber console board) */}
+            <div className="absolute bottom-[10%] left-[20%] w-[33%] h-[26%] flex flex-col items-center justify-center pointer-events-none text-center bg-black/75 backdrop-blur-[2px] p-2 border border-[#48ff48]/60 shadow-[0_0_20px_rgba(72,255,72,0.4)]">
+              <div className="font-label-caps text-[8px] sm:text-[10px] text-[#48ff48]/90 uppercase tracking-widest font-mono flex items-center gap-1 mb-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#48ff48] animate-pulse"></span>
                 <span>SYS.LINK // v2.4</span>
               </div>
-              <span className="font-display-hero text-sm sm:text-base md:text-lg font-extrabold text-[#48ff48] drop-shadow-[0_0_12px_rgba(72,255,72,1)] tracking-wider uppercase leading-tight">
+              <span className="font-display-hero text-base sm:text-lg md:text-xl font-extrabold text-[#48ff48] drop-shadow-[0_0_12px_rgba(72,255,72,1)] tracking-wider uppercase leading-tight">
                 WELCOME TO THE GAME
               </span>
-              <span className="font-telemetry-sm text-[8px] sm:text-[9px] text-white/90 font-bold tracking-widest font-mono mt-0.5">
+              <span className="font-telemetry-sm text-[8px] sm:text-[10px] text-white/90 font-bold tracking-widest font-mono mt-0.5">
                 &gt; INITIALIZE ORBIT &lt;
               </span>
             </div>

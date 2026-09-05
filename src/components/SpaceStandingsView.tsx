@@ -11,26 +11,47 @@ import {
 
 interface SpaceStandingsViewProps {
   user: UserProfile | null;
-  onOpenCommunity: () => void;
+  sessionId?: string;
+  onOpenCommunity?: () => void;
   activeRoomCode?: string | null;
   currentGuessesCount?: number;
   currentScore?: number;
   solved?: boolean;
   isForfeited?: boolean;
+  onOpenAuth?: () => void;
 }
+
+const getStandingsCacheKey = (tab: string, roomCode?: string | null) => {
+  const today = new Date().toISOString().split('T')[0];
+  return `orbito_standings_swr_${today}_${tab}_${roomCode || 'global'}`;
+};
+
+const getCachedStandings = (tab: string, roomCode?: string | null): LeaderboardEntry[] => {
+  try {
+    const raw = localStorage.getItem(getStandingsCacheKey(tab, roomCode));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
 
 export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
   user,
+  sessionId,
   onOpenCommunity,
   activeRoomCode,
   currentGuessesCount = 0,
   currentScore = 1000,
   solved = false,
   isForfeited = false,
+  onOpenAuth,
 }) => {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<string>(activeRoomCode ? 'Room' : 'Global');
-  const [loading, setLoading] = useState(true);
+  const initialTab = activeRoomCode ? 'Room' : 'Global';
+  const initialCached = getCachedStandings(initialTab, activeRoomCode);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>(initialCached);
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const [loading, setLoading] = useState<boolean>(initialCached.length === 0);
+  const [isRevalidating, setIsRevalidating] = useState<boolean>(false);
   const [hudTime, setHudTime] = useState('');
 
   // Live HUD Time updater
@@ -52,13 +73,28 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
 
   useEffect(() => {
     loadStandings(activeTab);
-  }, [activeTab, activeRoomCode, currentGuessesCount, currentScore, solved, isForfeited]);
+  }, [activeTab, activeRoomCode, currentGuessesCount, currentScore, solved, isForfeited, user?.id, user?.username, user?.name]);
 
   const loadStandings = async (tab: string) => {
     try {
-      setLoading(true);
       const isRoomTab = tab === 'Room';
       const roomFilter = isRoomTab && activeRoomCode ? activeRoomCode : undefined;
+      const cached = getCachedStandings(tab, roomFilter);
+
+      if (cached.length > 0) {
+        setEntries(cached);
+        setLoading(false);
+        setIsRevalidating(true);
+      } else {
+        setLoading(true);
+      }
+      if (sessionId && user?.id) {
+        try {
+          await ApiClient.claimSession(sessionId, user.id);
+        } catch {
+          // Graceful non-blocking claim
+        }
+      }
       const commFilter = isRoomTab && user?.community && user.community !== 'Global Explorers' ? user.community : undefined;
       
       let serverEntries: LeaderboardEntry[] = [];
@@ -69,10 +105,13 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
         console.warn('Backend leaderboard fetch notice:', err);
       }
 
-      // If current pilot has flight telemetry, inject or update them in the standings
-      if (user && (currentGuessesCount > 0 || solved || isForfeited)) {
+      // If current pilot is authenticated, inject or update them in the standings
+      if (user) {
         const existingIdx = serverEntries.findIndex(
-          (e) => (user.id && e.userId === user.id) || (user.username && e.username.toLowerCase() === user.username.toLowerCase())
+          (e) => (user.id && e.userId === user.id) || 
+                 (user.username && e.username.toLowerCase() === user.username.toLowerCase()) ||
+                 (user.name && e.name && e.name.toLowerCase() === user.name.toLowerCase()) ||
+                 (user.name && e.username.toLowerCase() === user.name.toLowerCase())
         );
         const myScore = isForfeited ? 0 : currentScore;
         const myStatus = isForfeited ? 'FORFEITED' : (solved ? 'SOLVED' : 'ACTIVE');
@@ -124,10 +163,14 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
       });
 
       setEntries(deduplicated);
+      try {
+        localStorage.setItem(getStandingsCacheKey(tab, roomFilter), JSON.stringify(deduplicated));
+      } catch {}
     } catch (err) {
       console.error('Error loading leaderboard:', err);
     } finally {
       setLoading(false);
+      setIsRevalidating(false);
     }
   };
 
@@ -213,11 +256,42 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
           </button>
         </div>
 
+        {/* Guest Pilot Verification Prompt */}
+        {!user && onOpenAuth && (
+          <div className="w-full p-4 bg-primary/5 border border-primary/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left font-mono">
+            <div>
+              <div className="font-label-caps text-xs text-primary font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+                <span>CASUAL GUEST FLIGHT DETECTED</span>
+              </div>
+              <p className="text-[11px] text-white/80 mt-1 leading-relaxed">
+                Authorize with Google to claim your permanent pilot callsign, secure your daily streak, and record verified ranks on the Space Standings.
+              </p>
+            </div>
+            <button
+              onClick={onOpenAuth}
+              className="px-4 py-2.5 bg-primary hover:bg-primary/90 text-black font-mono text-xs font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer shadow-[0_0_15px_rgba(72,255,72,0.3)]"
+            >
+              CLAIM CALLSIGN
+            </button>
+          </div>
+        )}
+
         {/* Leaderboard Data Grid */}
         <div className="w-full bg-white/[0.03] backdrop-blur-[12px] border border-white/10 relative">
           {/* Telemetry Tag */}
-          <div className="absolute -top-3 right-4 bg-surface px-2 py-1 border border-white/10 font-label-caps text-[10px] text-primary/70">
-            [DATA_STREAM: ACTIVE]
+          <div className="absolute -top-3 right-4 bg-surface px-2.5 py-1 border border-white/10 font-label-caps text-[10px] text-primary/70 flex items-center gap-1.5 shadow-sm">
+            {isRevalidating ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+                <span className="text-primary font-bold tracking-wider">[DATA_STREAM: REVALIDATING...]</span>
+              </>
+            ) : (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                <span className="tracking-wider">[DATA_STREAM: ACTIVE]</span>
+              </>
+            )}
           </div>
 
           <div className="w-full overflow-x-auto">
@@ -254,7 +328,14 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
                   </tr>
                 ) : (
                   entries.map((entry, idx) => {
-                    const isCurrentUser = user && (entry.userId === user.id || entry.username === user.username);
+                    const isCurrentUser = Boolean(
+                      user && (
+                        (user.id && entry.userId === user.id) ||
+                        (user.username && entry.username && entry.username.toLowerCase() === user.username.toLowerCase()) ||
+                        (user.name && entry.name && entry.name.toLowerCase() === user.name.toLowerCase()) ||
+                        (user.name && entry.username && entry.username.toLowerCase() === user.name.toLowerCase())
+                      )
+                    );
                     const rankStr = (idx + 1).toString().padStart(2, '0');
                     const fleetClass = getFleetClass(entry.score);
 

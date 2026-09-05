@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import type { UserProfile } from '../types/game';
-import { Settings, User } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 interface NavbarProps {
   currentView: 'landing' | 'briefing' | 'game' | 'leaderboard';
@@ -72,26 +72,35 @@ export const Navbar: FC<NavbarProps> = ({
           </div>
 
           {/* Actions & Profile Icons */}
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-3 items-center">
             {/* Settings Icon */}
             <button 
               onClick={() => onOpenSettings ? onOpenSettings() : setCurrentView('briefing')}
               className="text-white/80 hover:text-primary transition-colors p-1 flex items-center justify-center cursor-pointer"
               title="Directives & Settings"
             >
-              <Settings className="w-5 h-5 text-white hover:text-primary transition-colors" />
+              <Settings className="w-4 h-4 text-white hover:text-primary transition-colors" />
             </button>
 
-            {/* Account Icon (Pure White) */}
-            <button 
-              onClick={user ? onOpenProfile : onOpenAuth}
-              className="text-white hover:text-white/80 transition-colors p-1 flex items-center justify-center cursor-pointer"
-              title={user ? `Pilot: ${user.username || user.name}` : 'Sign In with Google'}
-            >
-              <div className="w-7 h-7 rounded-full border border-white/70 hover:border-white bg-white/5 flex items-center justify-center transition-all">
-                <User className="w-4 h-4 text-white" />
-              </div>
-            </button>
+            {/* Account / Callsign Entry */}
+            {user ? (
+              <button 
+                onClick={onOpenProfile}
+                className="flex items-center gap-2 px-3 py-1 rounded-sm bg-white/5 border border-white/20 hover:border-primary text-white text-xs font-mono transition-all cursor-pointer"
+                title={`Pilot Profile: ${user.username || user.name}`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                <span className="font-bold tracking-wider uppercase text-white/90">{user.username || user.name}</span>
+              </button>
+            ) : (
+              <button 
+                onClick={onOpenAuth}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-black font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_12px_rgba(72,255,72,0.3)]"
+                title="Claim your permanent pilot callsign"
+              >
+                <span>CLAIM CALLSIGN</span>
+              </button>
+            )}
           </div>
         </div>
       </nav>

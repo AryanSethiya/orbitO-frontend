@@ -62,15 +62,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
         onClose();
       }, 1000);
     } catch (err: any) {
-      // Fallback local update
-      const updatedUser = { ...user, name: trimmed, username: trimmed };
-      localStorage.setItem('orbito_user', JSON.stringify(updatedUser));
-      onProfileUpdated(updatedUser);
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        onClose();
-      }, 1000);
+      setError(err.message || 'Callsign is already claimed by another pilot.');
     } finally {
       setSaving(false);
     }

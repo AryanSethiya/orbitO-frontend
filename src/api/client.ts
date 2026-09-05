@@ -49,6 +49,13 @@ export class ApiClient {
     return this.request<any>(`/sessions/${sessionId}`);
   }
 
+  static async claimSession(sessionId: string, userId: string) {
+    return this.request<any>(`/sessions/${sessionId}/claim`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
   static async submitGuess(sessionId: string, guess: string) {
     return this.request<GuessResponse>(`/sessions/${sessionId}/guess`, {
       method: 'POST',
