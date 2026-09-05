@@ -39,3 +39,8 @@ build/
 .vscode/
 .idea/
 Thumbs.db
+
+# Test scripts & temporary QA artifacts
+scripts/
+*.png
+*.webp
