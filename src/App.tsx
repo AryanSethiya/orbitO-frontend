@@ -532,6 +532,8 @@ export default function App() {
         sessionId={sessionId || ''}
         finalScore={currentScore}
         guessesCount={guesses.length}
+        guesses={guesses}
+        puzzleDate={puzzleDate}
         targetWord={guesses.find((g) => g.rank === 1)?.word || revealedWord || getDailyTargetWord(puzzleDate)}
         userCallsign={user?.username || user?.name || 'Pilot'}
         savedRoast={savedRoast}

@@ -1,6 +1,9 @@
 import { useState, useEffect, type FC } from 'react';
 import { Share2, Trophy, Clock, CheckCircle2, AlertTriangle, X, Terminal } from 'lucide-react';
 import { ApiClient } from '../api/client';
+import { ShareFlightCard } from './ShareFlightCard';
+import { generateShareText } from '../utils/shareTelemetry';
+import { type Guess } from '../types/game';
 
 interface OrbitSolvedModalProps {
   isOpen: boolean;
@@ -18,6 +21,8 @@ interface OrbitSolvedModalProps {
   isGuest?: boolean;
   onOpenAuth?: () => void;
   onClaimCallsign?: (user: any) => void;
+  guesses?: Guess[];
+  puzzleDate?: string | null;
 }
 
 export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
@@ -36,6 +41,8 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
   isGuest = false,
   onOpenAuth,
   onClaimCallsign,
+  guesses = [],
+  puzzleDate = null,
 }) => {
   const [countdown, setCountdown] = useState('');
   const [copied, setCopied] = useState(false);
@@ -50,6 +57,9 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
 
   const effectiveCallsign = claimedCallsign || userCallsign;
   const isActuallyGuest = isGuest && !claimedCallsign;
+
+  // Efficiency Tier
+  const efficiencyRating = guessesCount === 1 ? 'LEGENDARY' : guessesCount <= 5 ? 'SURGICAL' : guessesCount <= 12 ? 'TACTICAL' : 'RESOLUTE';
 
   // Time to next UTC midnight
   useEffect(() => {
@@ -148,13 +158,19 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleShare = () => {
-    const text = isForfeited
-      ? `🛰️ OrbitO Sector Debrief (Forfeit)\nTarget: ${targetWord}\nProbes: ${guessesCount}\nFinal Score: 0 CR\nhttps://orbito.site`
-      : `🛰️ OrbitO Sector Solved!\nTarget: ${targetWord}\nProbes: ${guessesCount}\nFinal Score: ${finalScore} CR\nhttps://orbito.site`;
+  const handleShare = async () => {
+    const text = generateShareText({
+      puzzleDate,
+      guesses,
+      guessesCount,
+      finalScore,
+      isForfeited,
+      userCallsign: effectiveCallsign || 'Pilot',
+      efficiencyRating,
+    });
 
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(text);
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -201,9 +217,6 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
       setIsClaiming(false);
     }
   };
-
-  // Efficiency Tier
-  const efficiencyRating = guessesCount === 1 ? 'LEGENDARY' : guessesCount <= 5 ? 'SURGICAL' : guessesCount <= 12 ? 'TACTICAL' : 'RESOLUTE';
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-2xl z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
@@ -297,28 +310,33 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
           </div>
 
           {/* Countdown to Next Orbit */}
-          <div className="flex items-center justify-center gap-2 p-2 bg-black/60 border border-white/10 font-label-caps text-xs text-white/60 mb-4">
+          <div className="flex items-center justify-center gap-2 p-2 bg-black/60 border border-white/10 font-label-caps text-xs text-white/60 mb-3">
             <Clock className="w-3.5 h-3.5 text-[#EF4444]" />
             <span>NEXT ORBIT COORDINATE IN:</span>
             <span className="font-bold text-[#EF4444] font-mono">{countdown}</span>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2.5 font-label-caps text-xs">
-            <button
-              onClick={handleShare}
-              className="py-3 px-3 bg-white/10 hover:bg-white/20 text-white font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span className="truncate">{copied ? 'COPIED!' : 'SHARE DEBRIEF'}</span>
-            </button>
+          {/* Viral Mission Debrief Share Card */}
+          <div className="mb-3">
+            <ShareFlightCard
+              puzzleDate={puzzleDate}
+              guesses={guesses}
+              guessesCount={guessesCount}
+              finalScore={0}
+              isForfeited={true}
+              userCallsign={effectiveCallsign || 'Pilot'}
+              efficiencyRating={efficiencyRating}
+            />
+          </div>
 
+          {/* Action Buttons */}
+          <div className="grid grid-cols-1 gap-2 font-label-caps text-xs">
             <button
               onClick={onOpenStandings}
               className="py-3 px-3 bg-[#991B1B] hover:bg-[#B91C1C] text-white font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-[0_0_20px_rgba(185,28,28,0.4)] hover:shadow-[0_0_25px_rgba(239,68,68,0.6)]"
             >
               <Trophy className="w-3.5 h-3.5 text-white shrink-0" />
-              <span className="truncate">STANDINGS</span>
+              <span className="truncate">SPACE STANDINGS</span>
             </button>
           </div>
         </div>
@@ -558,6 +576,19 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
                   </span>
                 </div>
               )}
+
+              {/* Viral Mission Debrief Share Card */}
+              <div className="pt-1">
+                <ShareFlightCard
+                  puzzleDate={puzzleDate}
+                  guesses={guesses}
+                  guessesCount={guessesCount}
+                  finalScore={finalScore}
+                  isForfeited={false}
+                  userCallsign={effectiveCallsign || 'Pilot'}
+                  efficiencyRating={efficiencyRating}
+                />
+              </div>
 
               {/* Navigation Action Buttons */}
               <div className="grid grid-cols-2 gap-3 font-label-caps text-xs pt-1">
