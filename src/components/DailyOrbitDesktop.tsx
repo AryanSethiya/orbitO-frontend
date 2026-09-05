@@ -307,7 +307,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
           </div>
 
           {/* Hero Tactical Radar Station (Covers the Screen) */}
-          <div className="bg-[#0c0c0c] border border-white/10 relative p-4 md:p-6 min-h-[460px] md:min-h-[520px] flex-1 flex flex-col justify-between items-center overflow-hidden shadow-[inset_0_0_80px_rgba(0,0,0,0.9)]">
+          <div className="bg-[#0c0c0c] border border-white/10 relative p-4 md:p-6 pb-8 sm:pb-10 min-h-[460px] md:min-h-[520px] flex-1 flex flex-col justify-between items-center overflow-hidden shadow-[inset_0_0_80px_rgba(0,0,0,0.9)]">
             {/* HUD Corner Data */}
             <div className="telemetry-corner corner-tl text-[10px] text-primary/80 font-mono flex items-center gap-1.5 z-20">
               <span className="w-1.5 h-1.5 bg-primary animate-ping"></span>
@@ -316,21 +316,21 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
             <div className="telemetry-corner corner-tr text-[10px] text-on-surface-variant/60 font-mono z-20">
               FREQ: 1420.4 MHz • GRID: AU
             </div>
-            <div className="telemetry-corner corner-bl text-[10px] text-on-surface-variant/60 font-mono z-20">
-              PROBES IN SECTOR: {guesses.length} {solved ? '(SOLVED)' : ''}
-            </div>
-            <div className="telemetry-corner corner-br text-[10px] text-primary/70 font-mono z-20">
-              {solved ? (
-                <span className="text-primary font-bold flex items-center gap-1.5 drop-shadow-[0_0_8px_rgba(72,255,72,0.6)]">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                  TARGET ACQUIRED: {targetWord || bestGuess?.word || 'SOLVED'}
-                </span>
-              ) : bestGuess ? (
-                `CLOSEST: ${bestGuess.word} (#${bestGuess.rank})`
-              ) : (
-                'TARGET: CLASSIFIED'
-              )}
-            </div>
+            {/* HUD Corner Telemetry (Active Mission Scanning) */}
+            {!solved && (
+              <>
+                <div className="telemetry-corner corner-bl text-[10px] text-on-surface-variant/60 font-mono z-20 pointer-events-none">
+                  PROBES IN SECTOR: {guesses.length}
+                </div>
+                <div className="telemetry-corner corner-br text-[10px] text-primary/70 font-mono z-20 pointer-events-none">
+                  {bestGuess ? (
+                    `CLOSEST: ${bestGuess.word} (#${bestGuess.rank})`
+                  ) : (
+                    'TARGET: CLASSIFIED'
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Corner Brackets */}
             <div className="absolute top-3 left-3 border-t-2 border-l-2 border-primary/40 w-4 h-4 pointer-events-none z-20"></div>
@@ -479,7 +479,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
 
             {/* Seamless Bottom Input / Mission Concluded Console */}
             {solved ? (
-              <div className={`w-full max-w-xl z-20 p-4 backdrop-blur-md relative mt-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-left ${
+              <div className={`w-full max-w-xl z-20 p-4 backdrop-blur-md relative mt-3 mb-2 sm:mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-left ${
                 isForfeited
                   ? 'bg-[#180a0a]/95 border-2 border-[#B91C1C]/70 shadow-[0_0_40px_rgba(185,28,28,0.35)]'
                   : 'bg-[#0a140d]/95 border-2 border-primary/60 shadow-[0_0_40px_rgba(72,255,72,0.3)]'
