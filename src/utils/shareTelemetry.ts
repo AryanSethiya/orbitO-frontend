@@ -38,7 +38,7 @@ export const generateShareText = ({
       `Status: Signal lost in deep void 📡`,
       ``,
       `Can you decipher the orbital frequency?`,
-      `https://orbito.site`,
+      `https://orbit-o-sigma.vercel.app/`,
     ].join('\n');
   }
 
@@ -90,6 +90,6 @@ export const generateShareText = ({
     ...telemetryRows,
     ``,
     `Intercept today's coordinate:`,
-    `https://orbito.site`,
+    `https://orbit-o-sigma.vercel.app/`,
   ].join('\n');
 };

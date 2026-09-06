@@ -201,6 +201,13 @@ export const ShareFlightCard: FC<ShareFlightCardProps> = ({
           ctx.font = 'bold 13px monospace';
           ctx.fillText(`SECTOR DATE: ${dateStr} • UPLINK: VERIFIED [ENCRYPTED]`, 745, 52);
 
+          // F) Cover bottom URL strip with updated Vercel URL
+          ctx.fillStyle = '#050a06';
+          ctx.fillRect(65, 710, 800, 32);
+          ctx.fillStyle = '#48ff48';
+          ctx.font = 'bold 13px monospace';
+          ctx.fillText('+ INTERCEPT THE DAILY COORDINATE -> https://orbit-o-sigma.vercel.app/', 70, 730);
+
         } else if (theme.id === 'quantum') {
           // --- QUANTUM CAT OVERLAY ---
           // A) Cover subtitle with pilot's real name
@@ -232,6 +239,13 @@ export const ShareFlightCard: FC<ShareFlightCardProps> = ({
           drawCatCard(348, 'PROBES DEPLOYED:', `${guessesCount} BURSTS`);
           drawCatCard(418, 'ORBIT LOCK:', isForfeited ? 'MIA [SIGNAL LOST]' : '100% [VERIFIED]', isForfeited);
 
+          // C) Cover bottom URL strip with updated Vercel URL
+          ctx.fillStyle = '#050d18';
+          ctx.fillRect(64, 706, 800, 30);
+          ctx.fillStyle = '#00D5FF';
+          ctx.font = 'bold 13px monospace';
+          ctx.fillText('+ INTERCEPT THE DAILY COORDINATE -> https://orbit-o-sigma.vercel.app/', 70, 726);
+
         } else if (theme.id === 'synthwave') {
           // --- CYBER SYNTH SHIBA OVERLAY ---
           // A) Cover subtitle in top-center box
@@ -259,6 +273,13 @@ export const ShareFlightCard: FC<ShareFlightCardProps> = ({
           ctx.fillStyle = isForfeited ? '#EF4444' : '#FF007F';
           ctx.font = 'bold 15px monospace';
           ctx.fillText(`ORBIT LOCK: ${isForfeited ? 'FORFEITED / MIA' : '100%'}`, 550, 224);
+
+          // C) Cover bottom URL strip with updated Vercel URL
+          ctx.fillStyle = '#090514';
+          ctx.fillRect(80, 705, 1216, 48);
+          ctx.fillStyle = '#00F5FF';
+          ctx.font = 'bold 14px monospace';
+          ctx.fillText('+ INTERCEPT THE DAILY COORDINATE -> https://orbit-o-sigma.vercel.app/', 360, 735);
         }
       } else {
         // High-tech procedural fallback while image loads
