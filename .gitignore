@@ -42,6 +42,9 @@ Thumbs.db
 
 # Test scripts & temporary QA artifacts
 scripts/
-*.png
-*.webp
 .agents/
+
+# Allow production assets in public
+!public/**/*.png
+!public/**/*.webp
+!public/**/*.jpg

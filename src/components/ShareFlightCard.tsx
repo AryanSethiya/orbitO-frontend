@@ -105,19 +105,35 @@ export const ShareFlightCard: FC<ShareFlightCardProps> = ({
   // Preload high-res badge artwork
   useEffect(() => {
     BADGE_THEMES.forEach((t) => {
-      if (!imageCacheRef.current.has(t.bgAsset)) {
-        const img = new Image();
-        img.src = t.bgAsset;
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          imageCacheRef.current.set(t.bgAsset, img);
-          if (t.id === selectedTheme) {
-            renderBadge(t);
-          }
-        };
+      const existing = imageCacheRef.current.get(t.bgAsset);
+      if (existing && existing.complete && existing.naturalWidth > 0) {
+        if (t.id === selectedTheme) {
+          renderBadge(t);
+        }
+        return;
+      }
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        imageCacheRef.current.set(t.bgAsset, img);
+        if (t.id === selectedTheme) {
+          renderBadge(t);
+        }
+      };
+      img.onerror = () => {
+        console.warn(`Badge asset could not be loaded: ${t.bgAsset}`);
+      };
+      img.src = t.bgAsset;
+
+      if (img.complete && img.naturalWidth > 0) {
+        imageCacheRef.current.set(t.bgAsset, img);
+        if (t.id === selectedTheme) {
+          renderBadge(t);
+        }
       }
     });
-  }, []);
+  }, [selectedTheme]);
 
   // Render the badge artwork and dynamically personalize with real user name and stats
   const renderBadge = useCallback((theme: BadgeThemeConfig): string | null => {
