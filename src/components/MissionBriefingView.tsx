@@ -13,11 +13,11 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
       <div className="scanline"></div>
 
       {/* Main Canvas */}
-      <main className="flex-grow pt-24 md:pt-28 pb-20 px-4 md:px-margin-desktop max-w-container-max mx-auto w-full relative z-10">
+      <main className="flex-grow pt-20 sm:pt-24 md:pt-28 pb-20 px-3 sm:px-4 md:px-margin-desktop max-w-container-max mx-auto w-full relative z-10">
         {/* Header Section */}
-        <header className="mb-12 border-b border-white/10 pb-6 relative">
-          <div className="flex justify-between items-start">
-            <h1 className="font-display-hero text-4xl sm:text-5xl md:text-6xl font-extrabold text-white uppercase tracking-tight leading-none">
+        <header className="mb-8 sm:mb-12 border-b border-white/10 pb-6 relative">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+            <h1 className="font-display-hero text-3xl sm:text-5xl md:text-6xl font-extrabold text-white uppercase tracking-tight leading-none">
               MISSION BRIEFING
             </h1>
             <div className="font-mono text-xs text-on-surface-variant/60 tracking-wider">
@@ -25,7 +25,7 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
             </div>
           </div>
 
-          <p className="font-telemetry-md text-sm sm:text-base text-on-surface-variant mt-4 max-w-3xl leading-relaxed">
+          <p className="font-telemetry-md text-xs sm:text-base text-on-surface-variant mt-4 max-w-3xl leading-relaxed">
             Operative, your objective is to decode the semantic coordinates of the target entity. You must navigate the conceptual void by entering terms conceptually adjacent to the target. Proximity dictates survival.
           </p>
         </header>
@@ -33,7 +33,7 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
         {/* Bento Grid Layout for Instructions */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter">
           {/* Objective Card (Span 4) */}
-          <div className="glass-panel p-6 sm:p-7 relative md:col-span-4 flex flex-col justify-between group hover:border-primary/50 transition-colors duration-300 min-h-[340px]">
+          <div className="glass-panel p-4 sm:p-7 relative md:col-span-4 flex flex-col justify-between group hover:border-primary/50 transition-colors duration-300 min-h-[280px] sm:min-h-[340px]">
             <div className="telemetry-corner corner-tl text-[10px] text-on-surface-variant/50 font-mono">
               PHASE 01
             </div>
@@ -45,7 +45,7 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
               <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center mb-6 bg-white/[0.02]">
                 <Target className="w-5 h-5 text-white" />
               </div>
-              <h3 className="font-display-hero text-2xl font-bold text-white mb-3">
+              <h3 className="font-display-hero text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
                 The Objective
               </h3>
               <p className="font-telemetry-sm text-xs sm:text-sm text-on-surface-variant/80 leading-relaxed">
@@ -55,7 +55,7 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
           </div>
 
           {/* Proximity Visualization (Span 8) - Smoothly Animated Orbiting System */}
-          <div className="active-panel p-6 relative md:col-span-8 min-h-[360px] overflow-hidden flex items-center justify-center bg-[#080d0a]/90 border border-primary/40 shadow-[0_0_35px_rgba(72,255,72,0.08)]">
+          <div className="active-panel p-4 sm:p-6 relative md:col-span-8 min-h-[300px] sm:min-h-[360px] overflow-hidden flex items-center justify-center bg-[#080d0a]/90 border border-primary/40 shadow-[0_0_35px_rgba(72,255,72,0.08)]">
             <div className="telemetry-corner corner-tl text-primary font-mono text-[10px] tracking-wider">
               SYS_VISUAL: ORBITAL_PROXIMITY
             </div>
@@ -64,7 +64,7 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
             </div>
 
             {/* Continuously Animated Rotating Rings & Orbiting Probes */}
-            <div className="relative w-full h-full min-h-[300px] flex items-center justify-center select-none pointer-events-none">
+            <div className="relative w-full h-full min-h-[260px] sm:min-h-[300px] flex items-center justify-center select-none pointer-events-none scale-85 xs:scale-90 sm:scale-100">
               {/* Outer Dashed Orbit 3 */}
               <div className="orbit-ring orbit-3 pointer-events-none"></div>
               {/* Mid Solid Orbit 2 */}
@@ -112,14 +112,14 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
           </div>
 
           {/* Step by Step Protocol (Span 12) */}
-          <div className="md:col-span-12 glass-panel p-6 sm:p-8 relative mt-2">
+          <div className="md:col-span-12 glass-panel p-4 sm:p-8 relative mt-2">
             <div className="telemetry-corner corner-tl text-[10px] text-on-surface-variant/60 font-mono tracking-wider">
               EXECUTION PROTOCOL
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8 mt-6">
               {/* Step 01 */}
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-3 sm:gap-4 items-start">
                 <div className="w-8 h-8 rounded-full border border-primary/60 text-white flex items-center justify-center font-mono text-xs flex-shrink-0 font-bold bg-primary/10">
                   01
                 </div>
@@ -134,7 +134,7 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
               </div>
 
               {/* Step 02 */}
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-3 sm:gap-4 items-start">
                 <div className="w-8 h-8 rounded-full border border-primary/60 text-white flex items-center justify-center font-mono text-xs flex-shrink-0 font-bold bg-primary/10">
                   02
                 </div>
@@ -149,7 +149,7 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
               </div>
 
               {/* Step 03 */}
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-3 sm:gap-4 items-start">
                 <div className="w-8 h-8 rounded-full border border-primary/60 text-white flex items-center justify-center font-mono text-xs flex-shrink-0 font-bold bg-primary/10">
                   03
                 </div>
@@ -166,10 +166,10 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
           </div>
 
           {/* Action Button (Span 12) */}
-          <div className="md:col-span-12 flex justify-center mt-8 mb-4">
+          <div className="md:col-span-12 flex justify-center mt-6 sm:mt-8 mb-4">
             <button 
               onClick={onInitiateSequence}
-              className="btn-glitch px-12 py-4 font-telemetry-md text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_25px_rgba(72,255,72,0.6)]"
+              className="w-full sm:w-auto btn-glitch px-8 sm:px-12 py-3.5 sm:py-4 font-telemetry-md text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_25px_rgba(72,255,72,0.6)] min-h-[48px]"
             >
               <Rocket className="w-5 h-5 fill-black" />
               <span>INITIATE SEQUENCE</span>
@@ -179,11 +179,11 @@ export const MissionBriefingView: FC<MissionBriefingViewProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="w-full bg-surface-container-lowest border-t border-white/5 flex flex-col md:flex-row justify-between items-center px-margin-desktop py-6 relative z-10 mt-auto text-xs font-mono">
-        <div className="text-white/80 mb-3 md:mb-0">
+      <footer className="w-full bg-surface-container-lowest border-t border-white/5 flex flex-col md:flex-row justify-between items-center px-4 sm:px-6 md:px-margin-desktop py-6 relative z-10 mt-auto text-xs font-mono mb-14 md:mb-0">
+        <div className="text-white/80 mb-3 md:mb-0 text-center md:text-left">
           © 2144 ORBITO SYSTEM COMMAND. ALL RIGHTS RESERVED.
         </div>
-        <div className="flex gap-6 uppercase text-on-surface-variant/60">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 uppercase text-on-surface-variant/60 text-center">
           <span>MISSION_STATUS: <span className="text-primary font-bold">ONLINE</span></span>
           <span>COORDINATES: <span className="text-white">0.0.0.1</span></span>
           <span>CLOCK: <span className="text-white">UTC+0</span></span>

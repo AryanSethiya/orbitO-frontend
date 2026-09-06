@@ -64,6 +64,13 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
   const logContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const prevGuessesLengthRef = useRef(guesses.length);
+  const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Global Hotkey: Press '/' anywhere on screen to immediately focus coordinate input
   useEffect(() => {
@@ -140,11 +147,14 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
     return curr.rank < best.rank ? curr : best;
   }, null);
 
+  // Dynamic radar radius calculation for flawless probe scaling on all devices
+  const dynamicRadarRadius = windowWidth < 380 ? 105 : windowWidth < 640 ? 125 : windowWidth < 768 ? 150 : 180;
+
   // Radar position calculation: map rank to concentric orbital distances
   const getProbeCoordinates = (rank: number, index: number, total: number) => {
     const angle = (index / Math.max(1, total)) * 2 * Math.PI - Math.PI / 4;
-    const maxRadius = 185;
-    const minRadius = 35;
+    const maxRadius = dynamicRadarRadius;
+    const minRadius = Math.max(22, Math.round(dynamicRadarRadius * 0.18));
     const clampedRank = Math.min(1000, Math.max(1, rank));
     const normalizedDist = Math.log10(clampedRank) / 3;
     const radius = minRadius + normalizedDist * (maxRadius - minRadius);
@@ -158,10 +168,10 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
     <div className="min-h-screen bg-[#000000] text-[#e2e2e2] font-telemetry-md relative flex flex-col overflow-x-hidden select-none">
       <div className="scanline"></div>
 
-      {/* Main Container with 3-Column Layout */}
-      <div className="flex-1 flex pt-24 pb-8 w-full min-h-[calc(100vh-4rem)]">
-        {/* 1. Left Sidebar Navigation */}
-        <aside className="w-64 bg-[#131313] border-r border-white/10 flex flex-col p-4 z-30 shrink-0 min-h-[calc(100vh-8rem)]">
+      {/* Main Container with Adaptive Layout */}
+      <div className="flex-1 flex pt-20 sm:pt-24 pb-28 sm:pb-24 md:pb-10 w-full min-h-[calc(100vh-4rem)]">
+        {/* 1. Left Sidebar Navigation (Desktop >= xl) */}
+        <aside className="hidden xl:flex w-64 bg-[#131313] border-r border-white/10 flex-col p-4 z-30 shrink-0 min-h-[calc(100vh-8rem)]">
           {/* Sector User Card */}
           <div className="mb-6 border-b border-white/10 pb-4">
             <div className="w-12 h-12 bg-white/5 border border-white/20 mb-3 flex items-center justify-center overflow-hidden">
@@ -279,69 +289,133 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
         </aside>
 
         {/* 2. Center Workspace (Full-Canvas Tactical Radar & Input Bar) */}
-        <main className="flex-1 px-4 md:px-8 flex flex-col gap-4 max-w-5xl">
+        <main className="flex-1 px-3 sm:px-6 md:px-8 flex flex-col gap-3 sm:gap-4 max-w-5xl w-full mx-auto">
+          {/* Mobile Tactical Quick-Station Bar (< xl screens) */}
+          <div className="xl:hidden grid grid-cols-5 gap-1 w-full text-xs font-label-caps uppercase border-b border-white/10 pb-1.5 pt-1">
+            <button
+              onClick={() => setActiveSideTab('dashboard')}
+              className={`py-1.5 px-1 flex flex-col xs:flex-row items-center justify-center gap-1 border transition-all cursor-pointer min-w-0 ${
+                activeSideTab === 'dashboard'
+                  ? 'bg-primary text-black font-bold border-primary shadow-[0_0_10px_rgba(72,255,72,0.3)]'
+                  : 'bg-white/5 text-on-surface-variant border-white/10 hover:text-white'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate text-[9px] xs:text-[11px]">RADAR</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveSideTab('logs');
+                setShowLogsModal(true);
+              }}
+              className="py-1.5 px-1 flex flex-col xs:flex-row items-center justify-center gap-1 bg-white/5 border border-white/10 text-on-surface-variant hover:text-white transition-all cursor-pointer min-w-0"
+            >
+              <Database className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate text-[9px] xs:text-[11px]">LOGS{guesses.length > 0 ? ` (${guesses.length})` : ''}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveSideTab('encryption');
+                setShowHintsModal(true);
+              }}
+              className="py-1.5 px-1 flex flex-col xs:flex-row items-center justify-center gap-1 bg-white/5 border border-white/10 text-on-surface-variant hover:text-white transition-all cursor-pointer min-w-0"
+            >
+              <Lock className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate text-[9px] xs:text-[11px]">HINTS{unlockedHints.length > 0 ? ` (${unlockedHints.length})` : ''}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveSideTab('telemetry');
+                setShowTelemetryModal(true);
+              }}
+              className="py-1.5 px-1 flex flex-col xs:flex-row items-center justify-center gap-1 bg-white/5 border border-white/10 text-on-surface-variant hover:text-white transition-all cursor-pointer min-w-0"
+            >
+              <LineChart className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate text-[9px] xs:text-[11px]">STATS</span>
+            </button>
+
+            {solved ? (
+              <button
+                onClick={onShowRoast}
+                className="py-1.5 px-1 flex flex-col xs:flex-row items-center justify-center gap-1 bg-primary/15 border border-primary/50 text-primary uppercase font-bold cursor-pointer animate-pulse min-w-0"
+              >
+                <Flame className="w-3.5 h-3.5 shrink-0 text-primary" />
+                <span className="truncate text-[9px] xs:text-[11px]">DEBRIEF</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowTerminateConfirm(true)}
+                className="py-1.5 px-1 flex flex-col xs:flex-row items-center justify-center gap-1 bg-[#B91C1C]/15 border border-[#B91C1C]/60 text-[#EF4444] hover:bg-[#B91C1C]/25 uppercase font-bold cursor-pointer min-w-0"
+              >
+                <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-[#EF4444]" />
+                <span className="truncate text-[9px] xs:text-[11px]">ABORT</span>
+              </button>
+            )}
+          </div>
+
           {/* Header Title HUD */}
-          <div className="flex justify-between items-center pt-2 border-b border-white/10 pb-3">
+          <div className="flex flex-wrap justify-between items-center gap-2 pt-1 border-b border-white/10 pb-3">
             <div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                <h1 className="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight uppercase leading-none">
+                <h1 className="font-display-hero text-xl xs:text-2xl md:text-3xl font-extrabold text-white tracking-tight uppercase leading-none">
                   MISSION CONTROL
                 </h1>
               </div>
-              <p className="font-telemetry-sm text-[11px] text-on-surface-variant/70 mt-1">
+              <p className="font-telemetry-sm text-[10px] sm:text-[11px] text-on-surface-variant/70 mt-1">
                 TACTICAL ORBIT SCANNER • PROBE RANGE: 1000 AU
               </p>
             </div>
 
-            {/* Signal Strength & Status Box */}
-            <div className="bg-white/[0.03] border border-white/10 px-3.5 py-2 flex items-center gap-3">
-              <Wifi className="w-4 h-4 text-primary animate-pulse" />
-              <div>
-                <div className="font-label-caps text-[9px] text-on-surface-variant/60 uppercase">SIGNAL ACCURACY</div>
-                <div className="font-telemetry-md text-xs font-bold text-white">
-                  {bestGuess ? `${Math.max(10, Math.round((1000 - Math.min(1000, bestGuess.rank)) / 10))}.4%` : '98.4%'}
+            {/* Signal Strength & Score HUD */}
+            <div className="flex items-center gap-2">
+              <div className="bg-white/[0.03] border border-white/10 px-2.5 sm:px-3.5 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3">
+                <Wifi className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary animate-pulse" />
+                <div>
+                  <div className="font-label-caps text-[8px] sm:text-[9px] text-on-surface-variant/60 uppercase">SIGNAL</div>
+                  <div className="font-telemetry-md text-xs font-bold text-white">
+                    {bestGuess ? `${Math.max(10, Math.round((1000 - Math.min(1000, bestGuess.rank)) / 10))}.4%` : '98.4%'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/[0.03] border border-white/10 px-2.5 sm:px-3.5 py-1.5 sm:py-2 flex items-center gap-2">
+                <div>
+                  <div className="font-label-caps text-[8px] sm:text-[9px] text-on-surface-variant/60 uppercase">CREDITS</div>
+                  <div className="font-telemetry-md text-xs font-bold text-primary">
+                    {currentScore} CR
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Hero Tactical Radar Station (Covers the Screen) */}
-          <div className="bg-[#0c0c0c] border border-white/10 relative p-4 md:p-6 pb-8 sm:pb-10 min-h-[460px] md:min-h-[520px] flex-1 flex flex-col justify-between items-center overflow-hidden shadow-[inset_0_0_80px_rgba(0,0,0,0.9)]">
-            {/* HUD Corner Data */}
-            <div className="telemetry-corner corner-tl text-[10px] text-primary/80 font-mono flex items-center gap-1.5 z-20">
-              <span className="w-1.5 h-1.5 bg-primary animate-ping"></span>
-              <span>RADAR_SWEEP: ACTIVE [360°]</span>
+          <div className="bg-[#0c0c0c] border border-white/10 relative p-3 sm:p-5 min-h-[380px] xs:min-h-[420px] sm:min-h-[500px] flex-1 flex flex-col justify-between items-center overflow-hidden shadow-[inset_0_0_80px_rgba(0,0,0,0.9)]">
+            {/* Top Telemetry Strip (Responsive flexbox - never overlaps) */}
+            <div className="w-full flex items-center justify-between text-[9px] sm:text-[10px] font-mono px-2 pt-0.5 pb-2 border-b border-white/5 z-20">
+              <div className="flex items-center gap-1.5 text-primary/80 font-bold truncate">
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ping shrink-0"></span>
+                <span className="truncate">RADAR_SWEEP: ACTIVE</span>
+              </div>
+              <div className="text-on-surface-variant/60 shrink-0 text-right font-mono text-[9px] sm:text-[10px]">
+                <span className="hidden xs:inline">FREQ: </span>1420.4 MHz • GRID: AU
+              </div>
             </div>
-            <div className="telemetry-corner corner-tr text-[10px] text-on-surface-variant/60 font-mono z-20">
-              FREQ: 1420.4 MHz • GRID: AU
-            </div>
-            {/* HUD Corner Telemetry (Active Mission Scanning) */}
-            {!solved && (
-              <>
-                <div className="telemetry-corner corner-bl text-[10px] text-on-surface-variant/60 font-mono z-20 pointer-events-none">
-                  PROBES IN SECTOR: {guesses.length}
-                </div>
-                <div className="telemetry-corner corner-br text-[10px] text-primary/70 font-mono z-20 pointer-events-none">
-                  {bestGuess ? (
-                    `CLOSEST: ${bestGuess.word} (#${bestGuess.rank})`
-                  ) : (
-                    'TARGET: CLASSIFIED'
-                  )}
-                </div>
-              </>
-            )}
 
             {/* Corner Brackets */}
-            <div className="absolute top-3 left-3 border-t-2 border-l-2 border-primary/40 w-4 h-4 pointer-events-none z-20"></div>
-            <div className="absolute top-3 right-3 border-t-2 border-r-2 border-primary/40 w-4 h-4 pointer-events-none z-20"></div>
-            <div className="absolute bottom-3 left-3 border-b-2 border-l-2 border-primary/40 w-4 h-4 pointer-events-none z-20"></div>
-            <div className="absolute bottom-3 right-3 border-b-2 border-r-2 border-primary/40 w-4 h-4 pointer-events-none z-20"></div>
+            <div className="absolute top-2 sm:top-3 left-2 sm:left-3 border-t-2 border-l-2 border-primary/40 w-3 sm:w-4 h-3 sm:h-4 pointer-events-none z-10"></div>
+            <div className="absolute top-2 sm:top-3 right-2 sm:right-3 border-t-2 border-r-2 border-primary/40 w-3 sm:w-4 h-3 sm:h-4 pointer-events-none z-10"></div>
+            <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 border-b-2 border-l-2 border-primary/40 w-3 sm:w-4 h-3 sm:h-4 pointer-events-none z-10"></div>
+            <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 border-b-2 border-r-2 border-primary/40 w-3 sm:w-4 h-3 sm:h-4 pointer-events-none z-10"></div>
 
             {/* Central Radar Circle Container */}
-            <div className="w-full flex-1 flex items-center justify-center relative my-2 min-h-[360px] md:min-h-[400px]">
-              {/* Radar Outer Bounds Container */}
-              <div className="relative w-[340px] h-[340px] sm:w-[420px] sm:h-[420px] md:w-[460px] md:h-[460px] flex items-center justify-center">
+            <div className="w-full flex-1 flex items-center justify-center relative my-2 min-h-[290px] xs:min-h-[330px] sm:min-h-[390px]">
+              {/* Radar Outer Bounds Container (Responsive scale across mobile, tablet, desktop) */}
+              <div className="relative w-[280px] h-[280px] xs:w-[320px] xs:h-[320px] sm:w-[380px] sm:h-[380px] md:w-[440px] md:h-[440px] max-w-[85vw] max-h-[85vw] flex items-center justify-center">
                 {/* 360 Scanner Beam & Sweeping Line */}
                 <div className="radar-scanner-beam"></div>
                 <div className="radar-sweep-line"></div>
@@ -349,28 +423,28 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                 {/* Concentric Radar Distance Rings */}
                 {/* Ring 1: Outer (Rank 1000) */}
                 <div className="absolute inset-0 border border-primary/25 rounded-full">
-                  <span className="absolute top-1 left-1/2 -translate-x-1/2 font-mono text-[8px] text-primary/50 bg-black/60 px-1">
+                  <span className="absolute top-1 left-1/2 -translate-x-1/2 font-mono text-[7px] sm:text-[8px] text-primary/50 bg-black/60 px-1">
                     RANGE: 1000 AU
                   </span>
                 </div>
 
                 {/* Ring 2: Mid Outer (Rank 500) */}
                 <div className="absolute w-[75%] h-[75%] border border-primary/20 rounded-full">
-                  <span className="absolute top-0.5 left-1/2 -translate-x-1/2 font-mono text-[8px] text-primary/40 bg-black/60 px-1">
+                  <span className="absolute top-0.5 left-1/2 -translate-x-1/2 font-mono text-[7px] sm:text-[8px] text-primary/40 bg-black/60 px-1">
                     RANGE: 500 AU
                   </span>
                 </div>
 
                 {/* Ring 3: Mid Inner (Rank 100) */}
                 <div className="absolute w-[50%] h-[50%] border border-primary/35 rounded-full shadow-[0_0_15px_rgba(72,255,72,0.08)]">
-                  <span className="absolute top-0.5 left-1/2 -translate-x-1/2 font-mono text-[8px] text-primary/60 bg-black/60 px-1">
+                  <span className="absolute top-0.5 left-1/2 -translate-x-1/2 font-mono text-[7px] sm:text-[8px] text-primary/60 bg-black/60 px-1">
                     RANGE: 100 AU
                   </span>
                 </div>
 
                 {/* Ring 4: Target Perimeter (Rank 25) */}
                 <div className="absolute w-[25%] h-[25%] border border-primary/50 rounded-full animate-pulse shadow-[0_0_15px_rgba(72,255,72,0.15)]">
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[8px] text-primary font-bold bg-black/80 px-1">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[7px] sm:text-[8px] text-primary font-bold bg-black/80 px-1">
                     ORBIT
                   </span>
                 </div>
@@ -391,7 +465,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                 <div className="relative z-30 flex items-center justify-center">
                   <div className={`target-node ${isForfeited ? 'border-[#EF4444] shadow-[0_0_25px_#EF4444]' : 'shadow-[0_0_25px_#48ff48]'}`}></div>
                   {solved && (
-                    <div className={`absolute -top-7 px-2.5 py-0.5 bg-black/90 font-mono font-black text-[10px] uppercase tracking-wider whitespace-nowrap animate-bounce flex items-center gap-1.5 ${
+                    <div className={`absolute -top-7 px-2.5 py-0.5 bg-black/90 font-mono font-black text-[9px] sm:text-[10px] uppercase tracking-wider whitespace-nowrap animate-bounce flex items-center gap-1.5 ${
                       isForfeited
                         ? 'text-[#EF4444] border border-[#EF4444]/80 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
                         : 'text-primary border border-primary/80 shadow-[0_0_15px_rgba(72,255,72,0.4)]'
@@ -402,7 +476,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                   )}
                 </div>
 
-                {/* Plotted Probe Vectors on Radar (Excludes redundant target node or Rank 1 when solved/forfeited) */}
+                {/* Plotted Probe Vectors on Radar */}
                 {guesses.slice(-12).filter(g => !solved || (g.rank !== 1 && g.word.toUpperCase() !== (targetWord || '').toUpperCase())).map((g, idx, arr) => {
                   const { x, y } = getProbeCoordinates(g.rank, idx, arr.length);
                   const isHit = g.rank === 1;
@@ -421,7 +495,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                         isHit ? 'bg-primary' : isHot ? 'bg-emerald-400' : isWarm ? 'bg-yellow-400' : 'bg-white/50'
                       }`} />
 
-                      <div className={`px-1.5 py-0.5 text-[9px] font-label-caps font-bold border flex items-center gap-1 shadow-md whitespace-nowrap backdrop-blur-md ${
+                      <div className={`px-1 sm:px-1.5 py-0.5 text-[8px] sm:text-[9px] font-label-caps font-bold border flex items-center gap-1 shadow-md whitespace-nowrap backdrop-blur-md ${
                         isHit
                           ? 'bg-[#48ff48] text-black border-[#48ff48] shadow-[0_0_12px_#48ff48]'
                           : isHot
@@ -441,7 +515,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                 {loadingGuess && (
                   (() => {
                     const pendingAngle = ((guesses.length * 137.5 + 45) % 360) * (Math.PI / 180);
-                    const pendingRadius = 145; // Placed on outer tactical sweep ring
+                    const pendingRadius = Math.round(dynamicRadarRadius * 0.8);
                     const pendingX = Math.round(Math.cos(pendingAngle) * pendingRadius);
                     const pendingY = Math.round(Math.sin(pendingAngle) * pendingRadius);
                     const rotationDeg = Math.round((pendingAngle * 180) / Math.PI) + 180;
@@ -453,22 +527,24 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                       >
                         {/* Dynamic Inward Trajectory Laser Trace pointing towards bullseye */}
                         <div
-                          className="absolute w-28 h-[1px] bg-gradient-to-r from-primary via-primary/50 to-transparent pointer-events-none animate-pulse"
+                          className="absolute w-[80px] h-[1px] bg-gradient-to-r from-primary via-primary/50 to-transparent pointer-events-none origin-left"
                           style={{
-                            transformOrigin: '0% 50%',
                             transform: `rotate(${rotationDeg}deg)`,
+                            top: '50%',
+                            left: '50%',
                           }}
                         />
 
-                        {/* Dual Expanding Ping Radar Waves */}
-                        <span className="w-6 h-6 rounded-full absolute -top-3 animate-ping bg-primary/30" />
-                        <span className="w-3.5 h-3.5 rounded-full absolute -top-1.5 animate-ping bg-primary/80 shadow-[0_0_15px_#48ff48]" />
-                        <span className="w-2 h-2 rounded-full absolute -top-1 bg-white shadow-[0_0_10px_#48ff48]" />
+                        {/* Pulsing Probe Beacon */}
+                        <div className="relative flex items-center justify-center">
+                          <span className="w-3.5 h-3.5 rounded-full bg-primary animate-ping absolute opacity-90"></span>
+                          <span className="w-2.5 h-2.5 rounded-full bg-primary border-2 border-black relative z-10 shadow-[0_0_12px_#48ff48]"></span>
+                        </div>
 
-                        {/* High-Visibility Sci-Fi Trajectory Badge */}
-                        <div className="px-2 py-0.5 text-[9px] font-mono font-black border border-primary text-primary bg-black/95 shadow-[0_0_20px_rgba(72,255,72,0.7)] flex items-center gap-1.5 whitespace-nowrap animate-pulse mt-2 z-30">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
-                          <span>TRANSMITTING... [{pendingVector || 'PROBE'}]</span>
+                        {/* Realtime Vector Telemetry Tag */}
+                        <div className="mt-1.5 px-2 py-0.5 bg-black/95 border border-primary text-primary font-mono text-[9px] font-black tracking-widest uppercase shadow-[0_0_12px_rgba(72,255,72,0.6)] animate-pulse whitespace-nowrap flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-primary animate-ping"></span>
+                          <span>ANALYZING: {pendingVector || 'PROBE'}...</span>
                         </div>
                       </div>
                     );
@@ -477,41 +553,22 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
               </div>
             </div>
 
-            {/* Seamless Bottom Input / Mission Concluded Console */}
+            {/* Bottom Form Control / Solved Message HUD */}
             {solved ? (
-              <div className={`w-full max-w-xl z-20 p-4 backdrop-blur-md relative mt-3 mb-2 sm:mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-left ${
-                isForfeited
-                  ? 'bg-[#180a0a]/95 border-2 border-[#B91C1C]/70 shadow-[0_0_40px_rgba(185,28,28,0.35)]'
-                  : 'bg-[#0a140d]/95 border-2 border-primary/60 shadow-[0_0_40px_rgba(72,255,72,0.3)]'
-              }`}>
-                <div>
-                  <div className={`text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5 font-bold ${
-                    isForfeited ? 'text-[#EF4444]' : 'text-primary'
-                  }`}>
-                    {isForfeited ? (
-                      <>
-                        <AlertTriangle className="w-3.5 h-3.5 text-[#EF4444]" />
-                        <span>MISSION FORFEITED // TARGET UNSEALED</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                        <span>MISSION ACCOMPLISHED // CENTER ORBIT LOCKED</span>
-                      </>
-                    )}
+              <div className="w-full max-w-xl z-20 bg-black/90 border border-primary/40 p-3 sm:p-4 text-center mt-3 shadow-[0_0_30px_rgba(72,255,72,0.15)] flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-left">
+                  <div className="font-label-caps text-[10px] text-primary uppercase tracking-widest flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                    <span>{isForfeited ? 'MISSION BLACKBOX ARCHIVED' : 'ORBIT CALCULATED SUCCESSFULLY'}</span>
                   </div>
-                  <div className="font-display-hero text-xl sm:text-2xl text-white uppercase font-black tracking-wider mt-0.5">
-                    TARGET: <span className={isForfeited ? 'text-[#EF4444] drop-shadow-[0_0_10px_rgba(239,68,68,0.6)]' : 'text-primary drop-shadow-[0_0_10px_#48ff48]'}>{targetWord || 'DECIPHERED'}</span>
-                  </div>
-                  <div className="font-mono text-[10px] text-white/60 mt-0.5">
-                    {guesses.length} PROBES TRANSMITTED • {isForfeited ? '0 CR (ABORTED)' : `${currentScore} CR CREDITS RECORDED`}
+                  <div className="font-display-hero text-lg sm:text-xl text-white uppercase font-bold mt-0.5">
+                    {targetWord ? `CENTER: [${targetWord}]` : 'TARGET UNLOCKED'}
                   </div>
                 </div>
 
                 <button
-                  type="button"
                   onClick={onShowRoast}
-                  className={`w-full sm:w-auto font-label-caps text-xs font-black py-3 px-5 uppercase tracking-wider transition-all glitch-hover shrink-0 cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`w-full sm:w-auto font-label-caps text-xs font-bold py-2.5 sm:py-3 px-5 uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     isForfeited
                       ? 'bg-[#991B1B] hover:bg-[#B91C1C] text-white shadow-[0_0_20px_rgba(185,28,28,0.5)]'
                       : 'bg-primary hover:bg-white text-black shadow-[0_0_20px_rgba(72,255,72,0.5)]'
@@ -522,8 +579,8 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="w-full max-w-xl z-20 bg-black/85 border border-white/15 p-3.5 backdrop-blur-md relative mt-3 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-                <form onSubmit={handleTransmit} className="flex flex-col sm:flex-row items-center gap-2.5 w-full">
+              <div className="w-full max-w-xl z-20 bg-black/85 border border-white/15 p-2.5 sm:p-3.5 backdrop-blur-md relative mt-3 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+                <form onSubmit={handleTransmit} className="flex flex-col sm:flex-row items-center gap-2 sm:gap-2.5 w-full">
                   <div className="relative flex-1 w-full">
                     <input
                       ref={inputRef}
@@ -532,7 +589,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                       value={inputVector}
                       onChange={(e) => setInputVector(e.target.value)}
                       placeholder="ENTER COORDINATE (E.G. PLANET)"
-                      className="w-full bg-black/80 border border-white/25 focus:border-primary text-center sm:text-left px-4 py-2.5 font-display-hero text-base sm:text-lg text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm focus:ring-0 input-glow transition-all uppercase tracking-wider disabled:opacity-50 pr-24"
+                      className="w-full bg-black/80 border border-white/25 focus:border-primary text-center sm:text-left px-3.5 sm:px-4 py-2.5 font-display-hero text-base sm:text-lg text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm focus:ring-0 input-glow transition-all uppercase tracking-wider disabled:opacity-50 pr-4 sm:pr-24"
                       autoFocus
                     />
                     <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-1 font-mono text-[9px] text-white/40 border border-white/20 px-1.5 py-0.5 pointer-events-none bg-black/70">
@@ -544,7 +601,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                   <button
                     type="submit"
                     disabled={loadingGuess || !inputVector.trim()}
-                    className="w-full sm:w-auto bg-[#48ff48] hover:bg-white text-black font-label-caps text-xs font-bold py-3 px-6 uppercase tracking-wider glitch-hover transition-all inline-flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(72,255,72,0.4)] disabled:opacity-50 shrink-0"
+                    className="w-full sm:w-auto bg-[#48ff48] hover:bg-white text-black font-label-caps text-xs font-bold py-2.5 sm:py-3 px-5 sm:px-6 uppercase tracking-wider glitch-hover transition-all inline-flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(72,255,72,0.4)] disabled:opacity-50 shrink-0 min-h-[44px]"
                   >
                     <Target className="w-4 h-4 font-bold" />
                     <span>{loadingGuess ? 'TRANSMITTING...' : 'TRANSMIT VECTOR'}</span>
@@ -556,13 +613,21 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                     {statusMessage}
                   </div>
                 )}
+
+                {/* Bottom Status Bar (Never overlaps with corner brackets) */}
+                <div className="w-full flex items-center justify-between text-[9px] sm:text-[10px] font-mono pt-2 mt-2 text-on-surface-variant/70 border-t border-white/10">
+                  <span className="font-bold text-white/80">PROBES: {guesses.length}</span>
+                  <span className="text-primary font-bold truncate ml-2">
+                    {bestGuess ? `CLOSEST: ${bestGuess.word} (#${bestGuess.rank})` : 'TARGET: CLASSIFIED'}
+                  </span>
+                </div>
               </div>
             )}
           </div>
         </main>
 
-        {/* 3. Right Sidebar: Transmission Log */}
-        <aside className="w-72 bg-[#131313] border-l border-white/10 p-4 flex flex-col shrink-0 min-h-[calc(100vh-7rem)]">
+        {/* 3. Right Sidebar: Transmission Log (Desktop >= xl) */}
+        <aside className="hidden xl:flex w-72 bg-[#131313] border-l border-white/10 p-4 flex-col shrink-0 min-h-[calc(100vh-7rem)]">
           <div className="pb-3 border-b border-white/10 mb-3 flex justify-between items-center">
             <h2 className="font-label-caps text-xs text-on-surface-variant font-bold uppercase tracking-wider">
               TRANSMISSION LOG
@@ -622,8 +687,8 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
         </aside>
       </div>
 
-      {/* Footer */}
-      <footer className="w-full bg-[#000000] border-t border-white/10 py-4 px-6 flex flex-col md:flex-row justify-between items-center text-xs font-mono text-on-surface-variant/60 z-30">
+      {/* Footer with mobile bottom dock clearance */}
+      <footer className="w-full bg-[#000000] border-t border-white/10 py-4 px-6 pb-20 md:pb-4 flex flex-col md:flex-row justify-between items-center text-xs font-mono text-on-surface-variant/60 z-30">
         <div className="text-white/80">
           © 2144 ORBITO SYSTEM COMMAND. ALL RIGHTS RESERVED.
         </div>
@@ -636,11 +701,11 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
 
       {/* Telemetry Modal */}
       {showTelemetryModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#131313] border border-white/20 p-6 font-mono text-xs">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto min-h-screen py-6 sm:py-8">
+          <div className="w-full max-w-md bg-[#131313] border border-white/20 p-5 sm:p-6 font-mono text-xs my-auto max-h-[85vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
               <span className="text-primary font-bold uppercase">SECTOR-7 TELEMETRY</span>
-              <button onClick={() => setShowTelemetryModal(false)} className="text-white hover:text-primary">✕</button>
+              <button onClick={() => setShowTelemetryModal(false)} className="text-white hover:text-primary cursor-pointer p-1">✕</button>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between">
@@ -665,7 +730,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                 setShowTelemetryModal(false);
                 if (onOpenStandings) onOpenStandings();
               }}
-              className="mt-6 w-full py-2.5 bg-primary text-black font-bold uppercase glitch-hover"
+              className="mt-6 w-full py-2.5 bg-primary text-black font-bold uppercase glitch-hover cursor-pointer"
             >
               VIEW GLOBAL STANDINGS &rarr;
             </button>
@@ -679,14 +744,14 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
         const hintCost = nextHintNum === 1 ? 100 : nextHintNum === 2 ? 200 : 350;
 
         return (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-[#111111] border border-primary/50 p-6 font-mono text-xs shadow-[0_0_40px_rgba(72,255,72,0.15)] relative">
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto min-h-screen py-6 sm:py-8">
+            <div className="w-full max-w-md bg-[#111111] border border-primary/50 p-5 sm:p-6 font-mono text-xs shadow-[0_0_40px_rgba(72,255,72,0.15)] relative my-auto max-h-[85vh] overflow-y-auto">
               <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
                 <span className="text-primary font-bold uppercase flex items-center gap-1.5">
                   <Lock className="w-4 h-4" />
                   DECRYPTED TELEMETRY ({unlockedHints.length}/3)
                 </span>
-                <button onClick={() => setShowHintsModal(false)} className="text-white hover:text-primary cursor-pointer">✕</button>
+                <button onClick={() => setShowHintsModal(false)} className="text-white hover:text-primary cursor-pointer p-1">✕</button>
               </div>
 
               {/* Point Deduction Warning Notice */}
@@ -742,7 +807,7 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                 </button>
               ) : (
                 <div className="p-2.5 bg-white/5 border border-white/10 text-center font-label-caps text-[11px] text-on-surface-variant">
-                  {solved ? 'MISSION RESOLVED // HINTS ARCHIVED' : 'MAXIMUM HINTS UNLOCKED (3/3)'}
+                  {solved ? 'MISSION RESOLVED' : 'MAXIMUM HINTS UNLOCKED (3/3)'}
                 </div>
               )}
             </div>
@@ -752,14 +817,14 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
 
       {/* Full Transmission Logs Modal */}
       {showLogsModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#131313] border border-white/20 p-6 font-mono text-xs max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto min-h-screen py-6 sm:py-8">
+          <div className="w-full max-w-lg bg-[#131313] border border-white/20 p-5 sm:p-6 font-mono text-xs max-h-[85vh] flex flex-col my-auto">
             <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
               <span className="text-white font-bold uppercase flex items-center gap-2">
                 <Database className="w-4 h-4 text-primary" />
                 TRANSMISSION LOG ARCHIVE ({guesses.length})
               </span>
-              <button onClick={() => setShowLogsModal(false)} className="text-white hover:text-primary cursor-pointer">✕</button>
+              <button onClick={() => setShowLogsModal(false)} className="text-white hover:text-primary cursor-pointer p-1">✕</button>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[50vh]">
@@ -820,13 +885,13 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
 
       {/* Emergency Abort & Terminate Confirm Modal */}
       {showTerminateConfirm && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0d0a0a] border border-[#B91C1C] p-6 sm:p-8 font-telemetry-md text-xs shadow-[0_0_50px_rgba(185,28,28,0.45)] relative">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto min-h-screen py-6 sm:py-8">
+          <div className="w-full max-w-md bg-[#0d0a0a] border border-[#B91C1C] p-5 sm:p-8 font-telemetry-md text-xs shadow-[0_0_50px_rgba(185,28,28,0.45)] relative my-auto max-h-[85vh] overflow-y-auto">
             <div className="telemetry-corner corner-tl text-[#B91C1C] font-mono text-[10px]">EMERGENCY_OVERRIDE: 0xEE</div>
             <div className="telemetry-corner corner-tr">
               <button
                 onClick={() => setShowTerminateConfirm(false)}
-                className="text-on-surface-variant hover:text-white transition-colors cursor-pointer"
+                className="text-on-surface-variant hover:text-white transition-colors cursor-pointer p-1"
               >
                 ✕
               </button>
@@ -837,12 +902,12 @@ export const DailyOrbitDesktop: FC<DailyOrbitDesktopProps> = ({
                 <span className="material-symbols-outlined text-sm">warning</span>
                 <span>EMERGENCY PROTOCOL</span>
               </div>
-              <h3 className="text-white font-display-hero text-2xl font-bold uppercase">
+              <h3 className="text-white font-display-hero text-xl sm:text-2xl font-bold uppercase">
                 {solved ? 'DISCONNECT MISSION' : 'ABORT & REVEAL TARGET?'}
               </h3>
             </div>
 
-            <p className="text-on-surface-variant text-center leading-relaxed mb-6">
+            <p className="text-on-surface-variant text-center leading-relaxed mb-6 text-xs sm:text-sm">
               {solved
                 ? 'Disconnect from Mission Control and return to the main landing terminal.'
                 : 'Activating manual override will unseal today\'s classified center target coordinate, finalize your flight dossier, and forfeit all mission credits (0 CR).'}

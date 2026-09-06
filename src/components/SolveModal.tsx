@@ -77,7 +77,7 @@ export const SolveModal: FC<SolveModalProps> = ({
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-[#00f0ff]" />
               <span className="font-label-mono text-[11px] text-[#00f0ff] font-bold uppercase tracking-wider">
-                Gemini 3.5 Flash // Neural Roast
+                Neural Debrief
               </span>
             </div>
             <div className="flex gap-1">

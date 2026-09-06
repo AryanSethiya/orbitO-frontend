@@ -16,8 +16,7 @@ import {
   Volume2, 
   VolumeX, 
   Tv, 
-  ShieldCheck, 
-  Sparkles 
+  ShieldCheck 
 } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -193,14 +192,14 @@ export const SettingsModal: FC<SettingsModalProps> = ({
   const isCustomFleet = user?.community && user.community !== 'Global Explorers';
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[999] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-[#0e1410] border border-primary/50 relative shadow-[0_0_50px_rgba(72,255,72,0.25)] text-left font-mono overflow-hidden">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[999] flex items-start sm:items-center justify-center p-2.5 sm:p-4 overflow-y-auto min-h-screen py-6 sm:py-8 animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl bg-[#0e1410] border border-primary/50 relative shadow-[0_0_50px_rgba(72,255,72,0.25)] text-left font-mono my-auto max-h-[88vh] flex flex-col overflow-hidden">
         {/* HUD Top Bar */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-black/60">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-white/10 bg-black/60 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            <span className="font-label-caps text-xs text-primary font-bold tracking-widest uppercase">
-              SYSTEM_SETTINGS // COMMAND_HUD
+            <span className="font-label-caps text-[11px] sm:text-xs text-primary font-bold tracking-widest uppercase">
+              SYSTEM SETTINGS
             </span>
           </div>
           <button
@@ -212,67 +211,71 @@ export const SettingsModal: FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-white/10 bg-black/40 px-3 overflow-x-auto scrollbar-none">
+        {/* Navigation Tabs (All 4 options visible at once) */}
+        <div className="grid grid-cols-4 border-b border-white/10 bg-black/40 px-1 sm:px-3 shrink-0">
           <button
             onClick={() => { setActiveTab('fleet'); setError(null); setSuccessMsg(null); }}
-            className={`px-4 py-3 text-xs font-bold tracking-wider uppercase flex items-center gap-2 border-b-2 transition-all cursor-pointer shrink-0 ${
+            className={`py-2.5 sm:py-3 px-1 text-[10px] sm:text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition-all cursor-pointer min-w-0 ${
               activeTab === 'fleet'
                 ? 'border-primary text-primary bg-primary/10'
                 : 'border-transparent text-on-surface-variant hover:text-white'
             }`}
           >
-            <Users className="w-3.5 h-3.5" />
-            <span>FLEET COMMAND</span>
+            <Users className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate hidden sm:inline">FLEET COMMAND</span>
+            <span className="truncate sm:hidden">FLEET</span>
           </button>
 
           <button
             onClick={() => { setActiveTab('pilot'); setError(null); setSuccessMsg(null); }}
-            className={`px-4 py-3 text-xs font-bold tracking-wider uppercase flex items-center gap-2 border-b-2 transition-all cursor-pointer shrink-0 ${
+            className={`py-2.5 sm:py-3 px-1 text-[10px] sm:text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition-all cursor-pointer min-w-0 ${
               activeTab === 'pilot'
                 ? 'border-primary text-primary bg-primary/10'
                 : 'border-transparent text-on-surface-variant hover:text-white'
             }`}
           >
-            <User className="w-3.5 h-3.5" />
-            <span>PILOT ID</span>
+            <User className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate hidden sm:inline">PILOT ID</span>
+            <span className="truncate sm:hidden">PILOT</span>
           </button>
 
           <button
             onClick={() => { setActiveTab('telemetry'); setError(null); setSuccessMsg(null); }}
-            className={`px-4 py-3 text-xs font-bold tracking-wider uppercase flex items-center gap-2 border-b-2 transition-all cursor-pointer shrink-0 ${
+            className={`py-2.5 sm:py-3 px-1 text-[10px] sm:text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition-all cursor-pointer min-w-0 ${
               activeTab === 'telemetry'
                 ? 'border-primary text-primary bg-primary/10'
                 : 'border-transparent text-on-surface-variant hover:text-white'
             }`}
           >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>TELEMETRY & SFX</span>
+            <Sliders className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate hidden sm:inline">TELEMETRY & SFX</span>
+            <span className="truncate sm:hidden">AUDIO</span>
           </button>
 
           <button
             onClick={() => { setActiveTab('directives'); setError(null); setSuccessMsg(null); }}
-            className={`px-4 py-3 text-xs font-bold tracking-wider uppercase flex items-center gap-2 border-b-2 transition-all cursor-pointer shrink-0 ${
+            className={`py-2.5 sm:py-3 px-1 text-[10px] sm:text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition-all cursor-pointer min-w-0 ${
               activeTab === 'directives'
                 ? 'border-primary text-primary bg-primary/10'
                 : 'border-transparent text-on-surface-variant hover:text-white'
             }`}
           >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>DIRECTIVES</span>
+            <BookOpen className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate hidden sm:inline">DIRECTIVES</span>
+            <span className="truncate sm:hidden">INFO</span>
           </button>
         </div>
 
         {/* Notification Alerts */}
         {error && (
-          <div className="mx-5 mt-4 p-3 bg-error-container/20 border border-error/60 text-error text-xs flex items-center gap-2">
+          <div className="mx-4 sm:mx-5 mt-3 sm:mt-4 p-2.5 sm:p-3 bg-error-container/20 border border-error/60 text-error text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mx-5 mt-4 p-3 bg-primary/10 border border-primary/60 text-primary text-xs flex items-center justify-between gap-2">
+          <div className="mx-4 sm:mx-5 mt-3 sm:mt-4 p-2.5 sm:p-3 bg-primary/10 border border-primary/60 text-primary text-xs flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
@@ -290,7 +293,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
         )}
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
           {/* TAB 1: FLEET COMMAND */}
           {activeTab === 'fleet' && (
             <div className="space-y-5">
@@ -538,17 +541,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
                 </button>
               </div>
 
-              <div className="p-4 bg-black/60 border border-white/15">
-                <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span>HUD COLOR PROFILE</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-on-surface-variant/80">
-                  <span className="w-3 h-3 bg-primary border border-primary"></span>
-                  <span className="font-bold text-white">ORBITAL PHOSPHOR GREEN (#48FF48)</span>
-                  <span className="text-[10px] text-primary/60">[SYSTEM STANDARD]</span>
-                </div>
-              </div>
+
             </div>
           )}
 
@@ -593,7 +586,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
 
         {/* HUD Footer */}
         <div className="px-5 py-3 border-t border-white/10 bg-black/60 flex items-center justify-between text-[10px] text-on-surface-variant/60">
-          <span>ORBITO OS v2.4 // TELEMETRY TERMINAL</span>
+          <span>ORBITO OS v2.4</span>
           <button
             onClick={onClose}
             className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white font-bold uppercase tracking-wider transition-all cursor-pointer"

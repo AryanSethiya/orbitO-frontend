@@ -123,7 +123,7 @@ export const LandingAuthView: FC<LandingAuthViewProps> = ({ onLoginSuccess }) =>
           oRBITO
         </h1>
         <p className="font-mono text-xs sm:text-sm text-[#00f0ff] uppercase tracking-widest mt-2 font-bold max-w-md">
-          Semantic Word Orbit // Daily AI Proximity Puzzle
+          Semantic Word Orbit • Daily AI Proximity Puzzle
         </p>
       </div>
 

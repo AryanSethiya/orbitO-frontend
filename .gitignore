@@ -44,3 +44,4 @@ Thumbs.db
 scripts/
 *.png
 *.webp
+.agents/

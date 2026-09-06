@@ -88,26 +88,26 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#131313] border border-primary/40 relative p-6 sm:p-8 shadow-[0_0_30px_rgba(72,255,72,0.15)] text-left font-telemetry-md">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-start sm:items-center justify-center p-2.5 sm:p-4 overflow-y-auto min-h-screen py-6 sm:py-8">
+      <div className="w-full max-w-md bg-[#131313] border border-primary/40 relative p-4 sm:p-8 shadow-[0_0_30px_rgba(72,255,72,0.15)] text-left font-telemetry-md my-auto max-h-[90vh] flex flex-col">
         {/* HUD Corners */}
-        <div className="telemetry-corner corner-tl text-primary">DOSSIER_REF: 0x9A</div>
+        <div className="telemetry-corner corner-tl text-primary text-[10px] sm:text-xs">DOSSIER_REF: 0x9A</div>
         <div className="telemetry-corner corner-tr">
           <button
             onClick={onClose}
-            className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+            className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer p-1"
           >
             <span className="material-symbols-outlined text-base">close</span>
           </button>
         </div>
 
         {/* Header */}
-        <div className="mt-4 mb-6">
-          <div className="font-label-caps text-xs text-primary/80 uppercase tracking-widest mb-1 flex items-center gap-2">
+        <div className="mt-3 sm:mt-4 mb-4 sm:mb-6">
+          <div className="font-label-caps text-[11px] sm:text-xs text-primary/80 uppercase tracking-widest mb-1 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
             PILOT DOSSIER
           </div>
-          <h2 className="font-display-hero text-2xl sm:text-3xl text-primary uppercase tracking-tight leading-none">
+          <h2 className="font-display-hero text-xl sm:text-3xl text-primary uppercase tracking-tight leading-none">
             Identification
           </h2>
         </div>
@@ -126,12 +126,12 @@ export const ProfileModal: FC<ProfileModalProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-0.5">
           <div>
             <label className="font-label-caps text-xs text-on-surface-variant uppercase block mb-1 font-bold">
               SECURITY EMAIL
             </label>
-            <div className="w-full bg-black/60 border border-white/10 px-3.5 py-2.5 text-xs text-on-surface-variant/70 font-mono">
+            <div className="w-full bg-black/60 border border-white/10 px-3.5 py-2.5 text-xs text-on-surface-variant/70 font-mono break-all">
               {user.email || 'AUTHENTICATED_PILOT'}
             </div>
           </div>
@@ -147,7 +147,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
               maxLength={30}
               placeholder="e.g. CMDR_ALPHA"
               required
-              className="w-full bg-black/60 border border-primary/50 px-3.5 py-2.5 text-xs sm:text-sm font-telemetry-md text-primary font-bold input-glow uppercase tracking-wider"
+              className="w-full bg-black/60 border border-primary/50 px-3.5 py-2.5 text-base sm:text-sm font-telemetry-md text-primary font-bold input-glow uppercase tracking-wider"
             />
           </div>
 
@@ -202,7 +202,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                 onClose();
                 onLogout();
               }}
-              className="px-4 py-3 bg-black/60 border border-white/20 hover:border-error text-on-surface-variant hover:text-error transition-colors uppercase font-bold"
+              className="px-4 py-3 bg-black/60 border border-white/20 hover:border-error text-on-surface-variant hover:text-error transition-colors uppercase font-bold cursor-pointer"
             >
               LOGOUT
             </button>

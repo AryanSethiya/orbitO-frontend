@@ -17,31 +17,54 @@ const getActivePuzzleDateKey = (date?: string | null) => {
   return date || new Date().toISOString().split('T')[0];
 };
 
-const loadDailyState = (date?: string | null) => {
+const getDailyStateKey = (userId?: string | null, date?: string | null) => {
+  const dateKey = getActivePuzzleDateKey(date);
+  const userKey = userId || 'guest';
+  return `orbito_daily_state_${userKey}_${dateKey}`;
+};
+
+const loadDailyState = (userId?: string | null, date?: string | null) => {
   try {
-    const key = `orbito_daily_state_${getActivePuzzleDateKey(date)}`;
+    const key = getDailyStateKey(userId, date);
     const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : null;
+    if (saved) return JSON.parse(saved);
+    // Legacy fallback ONLY if guest
+    if (!userId || userId === 'guest') {
+      const legacyKey = `orbito_daily_state_${getActivePuzzleDateKey(date)}`;
+      const legacy = localStorage.getItem(legacyKey);
+      return legacy ? JSON.parse(legacy) : null;
+    }
+    return null;
   } catch {
     return null;
   }
 };
 
-const saveDailyState = (date: string | null, state: Record<string, any>) => {
+const saveDailyState = (userId: string | null | undefined, date: string | null, state: Record<string, any>) => {
   try {
-    const key = `orbito_daily_state_${getActivePuzzleDateKey(date)}`;
-    const existing = loadDailyState(date) || {};
+    const key = getDailyStateKey(userId, date);
+    const existing = loadDailyState(userId, date) || {};
     localStorage.setItem(key, JSON.stringify({ ...existing, ...state }));
   } catch {}
 };
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'briefing' | 'game' | 'leaderboard'>('landing');
-  const [user, setUser] = useState<UserProfile | null>(null);
+
+  // Initialize user synchronously from storage
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    try {
+      const saved = localStorage.getItem('orbito_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [sessionId, setSessionId] = useState<string>('');
   const [puzzleDate, setPuzzleDate] = useState<string | null>(null);
 
-  const initialDaily = loadDailyState(null);
+  const initialDaily = loadDailyState(user?.id, null);
   const [guesses, setGuesses] = useState<Guess[]>(initialDaily?.guesses || []);
   const [currentScore, setCurrentScore] = useState<number>(initialDaily?.currentScore ?? 1000);
   const [solved, setSolved] = useState<boolean>(initialDaily?.solved ?? false);
@@ -92,20 +115,29 @@ export default function App() {
         setPuzzleDate(activeDate);
       }
 
-      const cached = loadDailyState(activeDate);
+      const cached = loadDailyState(userId, activeDate);
 
-      if (cached?.isForfeited) {
+      // SERVER IS SUPREME TRUTH: If authenticated user already solved on server, restore victory!
+      if (res.solved) {
+        setSolved(true);
+        setIsForfeited(false);
+        if (res.score !== undefined) {
+          setCurrentScore(res.score);
+        }
+      } else if (cached?.isForfeited) {
         setIsForfeited(true);
         setSolved(true);
-      } else if (res.solved) {
-        setSolved(true);
+        setCurrentScore(0);
       } else if (cached?.solved) {
         setSolved(true);
+        if (cached?.currentScore !== undefined) {
+          setCurrentScore(cached.currentScore);
+        }
       }
 
-      if (res.score !== undefined && (!cached || res.score < cached.currentScore || res.solved)) {
+      if (res.score !== undefined && (res.solved || !cached || res.score < cached.currentScore)) {
         setCurrentScore(res.score);
-      } else if (cached?.currentScore !== undefined) {
+      } else if (cached?.currentScore !== undefined && !res.solved) {
         setCurrentScore(cached.currentScore);
       }
 
@@ -125,9 +157,8 @@ export default function App() {
           createdAt: g.createdAt,
         }));
         setGuesses(mapped);
-        saveDailyState(activeDate, { guesses: mapped });
-      } else if (cached?.guesses && cached.guesses.length > 0) {
-        // Retain user's local vectors if backend returns empty (e.g. freshly claimed callsign)
+        saveDailyState(userId, activeDate, { guesses: mapped, solved: Boolean(res.solved), currentScore: res.score });
+      } else if (cached?.guesses && cached.guesses.length > 0 && !res.solved) {
         setGuesses(cached.guesses);
       }
 
@@ -174,7 +205,7 @@ export default function App() {
       });
 
       setGuesses(recoveredGuesses);
-      saveDailyState(activeDate, {
+      saveDailyState(user?.id, activeDate, {
         guesses: recoveredGuesses,
         solved: true,
         revealedWord: target,
@@ -185,31 +216,86 @@ export default function App() {
 
   const handleLoginSuccess = async (newUser: UserProfile) => {
     setUser(newUser);
+    localStorage.setItem('orbito_user', JSON.stringify(newUser));
 
-    // Automatically claim current active session for the authenticated pilot
-    if (sessionId) {
-      try {
-        await ApiClient.claimSession(sessionId, newUser.id);
-      } catch (err) {
-        console.warn('Session claim notice:', err);
+    try {
+      // 1. Fetch official session for this authenticated user from backend
+      const serverSession = await ApiClient.startSession(newUser.id);
+      const activeDate = (serverSession as any).puzzleDate || (serverSession as any).date || puzzleDate;
+      if (activeDate) setPuzzleDate(activeDate);
+
+      // Case A: User ALREADY has an official completed session on their account today!
+      // Anti-cheat guard: NEVER overwrite an account's official daily score with an anonymous guest loss.
+      if (serverSession.solved || (serverSession.guesses && serverSession.guesses.length > 0)) {
+        setSessionId(serverSession.sessionId);
+        setSolved(Boolean(serverSession.solved));
+        setIsForfeited(false);
+        if (serverSession.score !== undefined) {
+          setCurrentScore(serverSession.score);
+        }
+        if (serverSession.roastText) {
+          setSavedRoast(serverSession.roastText);
+        }
+
+        if (serverSession.guesses && serverSession.guesses.length > 0) {
+          const mapped = serverSession.guesses.map((g: any) => ({
+            id: g.id,
+            word: g.word?.word || g.word,
+            rank: g.rank || 500,
+            similarityScore: g.semanticScore !== undefined ? g.semanticScore : (g.similarityScore !== undefined ? g.similarityScore : (g.rank === 1 ? 1.0 : 0.5)),
+            scoreDelta: g.scoreDelta || -5,
+            createdAt: g.createdAt,
+          }));
+          setGuesses(mapped);
+          saveDailyState(newUser.id, activeDate, {
+            user: newUser,
+            guesses: mapped,
+            solved: Boolean(serverSession.solved),
+            isForfeited: false,
+            currentScore: serverSession.score,
+            savedRoast: serverSession.roastText,
+          });
+        }
+        return;
       }
-    }
 
-    // Persist daily state with the claimed user
-    saveDailyState(puzzleDate, {
-      user: newUser,
-      guesses,
-      solved,
-      currentScore,
-      savedRoast,
-      revealedWord,
-    });
+      // Case B: Account has NOT played today's puzzle yet -> claim the guest session
+      if (sessionId) {
+        try {
+          const claimRes = await ApiClient.claimSession(sessionId, newUser.id);
+          if (claimRes?.reason === 'ALREADY_COMPLETED' && claimRes.session) {
+            initSession(newUser.id);
+            return;
+          }
+        } catch (err: any) {
+          console.warn('Session claim notice:', err);
+          if (err?.message?.includes('already completed') || err?.message?.includes('locked')) {
+            initSession(newUser.id);
+            return;
+          }
+        }
+      }
 
-    // If user was on leaderboard, do NOT redirect to game! Keep them on leaderboard!
-    if (currentView !== 'leaderboard' && !solved && !isSolvedOpen) {
-      setSavedRoast(null);
+      // Persist daily state with the claimed user
+      saveDailyState(newUser.id, puzzleDate, {
+        user: newUser,
+        guesses,
+        solved,
+        isForfeited,
+        currentScore,
+        savedRoast,
+        revealedWord,
+      });
+
+      // If user was on leaderboard, do NOT redirect to game! Keep them on leaderboard!
+      if (currentView !== 'leaderboard' && !solved && !isSolvedOpen) {
+        setSavedRoast(null);
+        initSession(newUser.id);
+        setCurrentView('game');
+      }
+    } catch (e) {
+      console.warn('Login session sync error:', e);
       initSession(newUser.id);
-      setCurrentView('game');
     }
   };
 
@@ -226,7 +312,7 @@ export default function App() {
     const solution = rank1Guess || revealedWord || getDailyTargetWord(puzzleDate);
     setRevealedWord(solution);
     setIsSolvedOpen(true);
-    saveDailyState(puzzleDate, {
+    saveDailyState(user?.id, puzzleDate, {
       isForfeited: true,
       solved: true,
       currentScore: 0,
@@ -237,11 +323,15 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    const activeUserId = user?.id;
+    const activeDate = puzzleDate || new Date().toISOString().split('T')[0];
     localStorage.removeItem('orbito_auth_token');
     localStorage.removeItem('orbito_user');
     localStorage.removeItem('orbito_player_id');
-    const activeDate = puzzleDate || new Date().toISOString().split('T')[0];
     localStorage.removeItem(`orbito_daily_state_${activeDate}`);
+    if (activeUserId) {
+      localStorage.removeItem(`orbito_daily_state_${activeUserId}_${activeDate}`);
+    }
     setUser(null);
     setActiveRoomCode(null);
     setGuesses([]);
@@ -252,6 +342,8 @@ export default function App() {
     setUnlockedHints([]);
     setIsProfileOpen(false);
     setCurrentView('landing');
+    // Start fresh clean guest session
+    initSession();
   };
 
   const handleSubmitGuess = async (word: string) => {
@@ -295,7 +387,7 @@ export default function App() {
 
       setGuesses((prev) => {
         const next = [...prev, newGuess];
-        saveDailyState(puzzleDate, {
+        saveDailyState(user?.id, puzzleDate, {
           guesses: next,
           currentScore: newScore,
           solved: isWinner,
@@ -338,7 +430,7 @@ export default function App() {
 
       setGuesses((prev) => {
         const next = [...prev, fallbackGuess];
-        saveDailyState(puzzleDate, {
+        saveDailyState(user?.id, puzzleDate, {
           guesses: next,
           currentScore: fallbackScore,
           solved: isFallbackWinner,
@@ -543,7 +635,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthOpen(true)}
         onClaimCallsign={(newUser) => {
           setUser(newUser);
-          saveDailyState(puzzleDate, {
+          saveDailyState(newUser.id, puzzleDate, {
             user: newUser,
             guesses,
             solved,

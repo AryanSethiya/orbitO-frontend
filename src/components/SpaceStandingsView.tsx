@@ -202,11 +202,11 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
       </div>
 
       {/* Main Canvas */}
-      <main className="flex-grow pt-24 md:pt-28 pb-28 px-4 md:px-margin-desktop max-w-container-max mx-auto w-full relative z-10 flex flex-col gap-6">
-        {/* Header Section (Matching Landing Page & Mission Briefing Font) */}
-        <header className="border-b border-white/10 pb-6 relative">
-          <div className="flex justify-between items-start">
-            <h1 className="font-display-hero text-4xl sm:text-5xl md:text-6xl font-extrabold text-white uppercase tracking-tight leading-none">
+      <main className="flex-grow pt-20 sm:pt-24 md:pt-28 pb-20 px-3 sm:px-4 md:px-margin-desktop max-w-container-max mx-auto w-full relative z-10 flex flex-col gap-4 sm:gap-6">
+        {/* Header Section */}
+        <header className="border-b border-white/10 pb-5 sm:pb-6 relative">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+            <h1 className="font-display-hero text-3xl sm:text-5xl md:text-6xl font-extrabold text-white uppercase tracking-tight leading-none">
               SPACE STANDINGS
             </h1>
             <div className="font-mono text-xs text-on-surface-variant/60 tracking-wider">
@@ -214,16 +214,16 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
             </div>
           </div>
 
-          <p className="font-telemetry-md text-sm sm:text-base text-on-surface-variant mt-4 max-w-3xl leading-relaxed">
+          <p className="font-telemetry-md text-xs sm:text-base text-on-surface-variant mt-3 sm:mt-4 max-w-3xl leading-relaxed">
             Global pilot telemetry. Displaying top-tier navigators and their current fleet status across the sector.
           </p>
         </header>
 
-        {/* Tab Switcher: Global & Fleet Room */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Tab Switcher: Global & Fleet Room (Horizontally scrollable on mobile) */}
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1 scrollbar-none w-full">
           <button
             onClick={() => setActiveTab('Global')}
-            className={`font-label-caps text-xs px-5 py-2.5 border uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+            className={`font-label-caps text-xs px-4 sm:px-5 py-2 sm:py-2.5 border uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'Global'
                 ? 'bg-primary text-black font-bold border-primary shadow-[0_0_12px_rgba(72,255,72,0.4)]'
                 : 'bg-white/5 text-on-surface-variant border-white/15 hover:text-primary hover:border-primary/50'
@@ -236,7 +236,7 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
           {currentCommunityName && (
             <button
               onClick={() => setActiveTab('Room')}
-              className={`font-label-caps text-xs px-5 py-2.5 border uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+              className={`font-label-caps text-xs px-4 sm:px-5 py-2 sm:py-2.5 border uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
                 activeTab === 'Room'
                   ? 'bg-primary text-black font-bold border-primary shadow-[0_0_12px_rgba(72,255,72,0.4)]'
                   : 'bg-white/5 text-primary border-primary/40 hover:bg-primary/10'
@@ -249,7 +249,7 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
 
           <button
             onClick={onOpenCommunity}
-            className="font-label-caps text-xs px-4 py-2.5 bg-black/40 border border-white/20 text-on-surface-variant hover:text-primary hover:border-primary/60 uppercase tracking-wider transition-all flex items-center gap-1.5 ml-auto"
+            className="font-label-caps text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 bg-black/40 border border-white/20 text-on-surface-variant hover:text-primary hover:border-primary/60 uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 ml-auto"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>{currentCommunityName ? 'SWITCH FLEET' : '+ FLEET ROOM'}</span>
@@ -258,7 +258,7 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
 
         {/* Guest Pilot Verification Prompt */}
         {!user && onOpenAuth && (
-          <div className="w-full p-4 bg-primary/5 border border-primary/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left font-mono">
+          <div className="w-full p-3.5 sm:p-4 bg-primary/5 border border-primary/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left font-mono">
             <div>
               <div className="font-label-caps text-xs text-primary font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
@@ -270,7 +270,7 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
             </div>
             <button
               onClick={onOpenAuth}
-              className="px-4 py-2.5 bg-primary hover:bg-primary/90 text-black font-mono text-xs font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer shadow-[0_0_15px_rgba(72,255,72,0.3)]"
+              className="px-4 py-2 sm:py-2.5 bg-primary hover:bg-primary/90 text-black font-mono text-xs font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer shadow-[0_0_15px_rgba(72,255,72,0.3)] min-h-[40px]"
             >
               CLAIM CALLSIGN
             </button>
@@ -294,7 +294,8 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
             )}
           </div>
 
-          <div className="w-full overflow-x-auto">
+          {/* Desktop Table View (Visible on md+) */}
+          <div className="hidden md:block w-full overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[650px]">
               <thead>
                 <tr className="border-b border-white/10 font-label-caps text-xs text-on-surface-variant">
@@ -330,7 +331,7 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
                   entries.map((entry, idx) => {
                     const isCurrentUser = Boolean(
                       user && (
-                        (user.id && entry.userId === user.id) ||
+                        (user.id && entry.userId === user.id) || 
                         (user.username && entry.username && entry.username.toLowerCase() === user.username.toLowerCase()) ||
                         (user.name && entry.name && entry.name.toLowerCase() === user.name.toLowerCase()) ||
                         (user.name && entry.username && entry.username.toLowerCase() === user.name.toLowerCase())
@@ -416,29 +417,131 @@ export const SpaceStandingsView: FC<SpaceStandingsViewProps> = ({
             </table>
           </div>
 
+          {/* Mobile Pilot Dossier Cards View (Visible on < md) */}
+          <div className="md:hidden p-3 space-y-2.5">
+            {loading ? (
+              <div className="py-12 text-center text-primary font-label-caps text-xs flex items-center justify-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+                <span>RETRIEVING TELEMETRY...</span>
+              </div>
+            ) : entries.length === 0 ? (
+              <div className="py-12 text-center text-on-surface-variant/60 flex flex-col items-center gap-2">
+                <Radar className="w-8 h-8 text-on-surface-variant/40" />
+                <p className="font-bold text-on-surface font-label-caps text-xs">NO PILOTS DETECTED</p>
+                <p className="text-[11px]">Be the first to transmit today's coordinates!</p>
+              </div>
+            ) : (
+              entries.map((entry, idx) => {
+                const isCurrentUser = Boolean(
+                  user && (
+                    (user.id && entry.userId === user.id) || 
+                    (user.username && entry.username && entry.username.toLowerCase() === user.username.toLowerCase()) ||
+                    (user.name && entry.name && entry.name.toLowerCase() === user.name.toLowerCase()) ||
+                    (user.name && entry.username && entry.username.toLowerCase() === user.name.toLowerCase())
+                  )
+                );
+                const rankStr = (idx + 1).toString().padStart(2, '0');
+                const fleetClass = getFleetClass(entry.score);
+
+                return (
+                  <div
+                    key={entry.userId || idx}
+                    className={`p-3 border text-left font-mono ${
+                      isCurrentUser
+                        ? 'bg-primary/5 border-primary shadow-[0_0_12px_rgba(72,255,72,0.2)]'
+                        : 'bg-black/60 border-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={`font-label-caps font-black text-xs px-1.5 py-0.5 border shrink-0 ${
+                          idx === 0 ? 'bg-primary text-black border-primary' : 'border-white/20 text-white/80'
+                        }`}>
+                          #{rankStr}
+                        </span>
+                        <img 
+                          className="w-7 h-7 border border-white/20 object-cover shrink-0"
+                          src={entry.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(entry.name || entry.username || 'pilot')}`} 
+                          alt="Avatar" 
+                        />
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs text-white truncate flex items-center gap-1">
+                            {isCurrentUser && <span className="text-primary font-label-caps">[YOU]</span>}
+                            <span className="truncate">{entry.name || entry.username}</span>
+                            {entry.isVerified && (
+                              <span className="text-[7px] font-mono px-1 py-0.2 bg-primary/20 text-primary border border-primary/40 font-black shrink-0">
+                                VERIFIED
+                              </span>
+                            )}
+                          </div>
+                          {entry.community && (
+                            <div className="text-[10px] text-white/50 truncate font-mono">
+                              {entry.community}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        {entry.status === 'FORFEITED' ? (
+                          <span className="px-1.5 py-0.5 bg-[#FF003C]/20 border border-[#FF003C]/50 text-[#FF2A55] font-label-caps text-[8px] font-bold">
+                            FORFEIT
+                          </span>
+                        ) : entry.status === 'ACTIVE' ? (
+                          <span className="px-1.5 py-0.5 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 font-label-caps text-[8px] font-bold animate-pulse">
+                            IN FLIGHT
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 bg-primary/20 border border-primary/50 text-primary font-label-caps text-[8px] font-bold">
+                            SOLVED
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 pt-2 border-t border-white/5 text-center font-mono text-[11px]">
+                      <div>
+                        <span className="text-[8px] text-white/40 block font-label-caps uppercase">SCORE</span>
+                        <span className="font-bold text-primary">{entry.score} CR</span>
+                      </div>
+                      <div>
+                        <span className="text-[8px] text-white/40 block font-label-caps uppercase">PROBES</span>
+                        <span className="text-white">{entry.guessesCount}</span>
+                      </div>
+                      <div>
+                        <span className="text-[8px] text-white/40 block font-label-caps uppercase">CLASS</span>
+                        <span className="text-white/80">{fleetClass}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
           {/* Footer of Table */}
-          <div className="p-4 border-t border-white/10 flex justify-between items-center bg-black/40">
+          <div className="p-3 sm:p-4 border-t border-white/10 flex justify-between items-center bg-black/40">
             <div className="font-label-caps text-xs text-on-surface-variant/70">
               TOTAL PILOTS: {entries.length}
             </div>
             <button 
               onClick={() => loadStandings(activeTab)}
               disabled={loading}
-              className="bg-primary text-black font-label-caps text-xs px-6 py-2 border border-primary hover:bg-black hover:text-primary transition-colors duration-300 glitch-hover uppercase font-bold cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+              className="bg-primary text-black font-label-caps text-xs px-4 sm:px-6 py-2 border border-primary hover:bg-black hover:text-primary transition-colors duration-300 glitch-hover uppercase font-bold cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>REFRESH FEED</span>
+              <span>REFRESH</span>
             </button>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="w-full bg-surface-container-lowest border-t border-white/5 flex flex-col md:flex-row justify-between items-center px-4 md:px-margin-desktop py-6 z-40 relative mt-auto">
-        <div className="font-label-caps text-xs text-primary mb-4 md:mb-0">
+      <footer className="w-full bg-surface-container-lowest border-t border-white/5 flex flex-col md:flex-row justify-between items-center px-4 md:px-margin-desktop py-6 z-40 relative mt-auto mb-14 md:mb-0">
+        <div className="font-label-caps text-xs text-primary mb-4 md:mb-0 text-center md:text-left">
           © 2144 ORBITO SYSTEM COMMAND. ALL RIGHTS RESERVED.
         </div>
-        <div className="flex flex-wrap gap-4 md:gap-8 font-telemetry-sm text-xs text-on-surface-variant/60">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-8 font-telemetry-sm text-xs text-on-surface-variant/60 text-center">
           <span className="hover:text-primary transition-colors cursor-default">MISSION_STATUS: ONLINE</span>
           <span className="hover:text-primary transition-colors cursor-default">COORDINATES: 0.0.0.1</span>
           <span className="hover:text-primary transition-colors cursor-default">CLOCK: UTC+0</span>
