@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useRef, type FC } from 'react';
 import { Share2, Trophy, Clock, CheckCircle2, AlertTriangle, X, Terminal } from 'lucide-react';
 import { ApiClient } from '../api/client';
 import { ShareFlightCard } from './ShareFlightCard';
@@ -48,6 +48,8 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [streamedRoast, setStreamedRoast] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isLoadingRoast, setIsLoadingRoast] = useState(false);
+  const requestedSessionIdRef = useRef<string | null>(null);
 
   // Callsign claiming state
   const [claimInput, setClaimInput] = useState('');
@@ -87,73 +89,102 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Stream AI roast text with typewriter effect
+  // Stream AI roast text with typewriter effect (clean single-stream lifecycle)
   useEffect(() => {
     if (!isOpen) {
       setStreamedRoast('');
       setIsStreaming(false);
+      setIsLoadingRoast(false);
       return;
     }
 
-    let fullText = '';
     const displayCallsign = effectiveCallsign && !effectiveCallsign.toLowerCase().startsWith('pilot_00') && !effectiveCallsign.toLowerCase().startsWith('guest_') ? effectiveCallsign : 'Pilot';
 
-    if (isForfeited) {
-      // Mission was forfeited: display blackbox abort debrief (ignore any old victory solve roast)
-      if (savedRoast && (savedRoast.includes('aborted') || savedRoast.includes('surrendered') || savedRoast.includes('forfeited') || savedRoast.includes('chaos'))) {
-        fullText = savedRoast.trim();
-      } else {
-        fullText = `Telemetry blackbox sealed. Sector orbit aborted after ${guessesCount} probes with 0 credits logged. True center coordinate unsealed as [${targetWord}]. Sector navigation requires resilience, pilot.`;
+    const getFallbackText = () => {
+      if (isForfeited) {
+        return `Telemetry blackbox sealed. Sector orbit aborted after ${guessesCount} probes with 0 credits logged. True center coordinate unsealed as [${targetWord}]. Sector navigation requires resilience, pilot.`;
       }
-    } else {
-      // Mission was solved: display victory roast
-      if (savedRoast && typeof savedRoast === 'string' && savedRoast.trim().length > 0 && !savedRoast.includes('aborted')) {
-        fullText = savedRoast.trim();
-      } else if (aiRoast && typeof aiRoast === 'string' && aiRoast.trim().length > 0) {
-        fullText = aiRoast.trim();
-      } else {
-        if (guessesCount === 1) {
-          fullText = `Phenomenal precision, ${displayCallsign}! You unlocked the center orbit in exactly 1 single probe. Perfect trajectory alignment achieved!`;
-        } else if (guessesCount <= 5) {
-          fullText = `Exceptional navigation, ${displayCallsign}. You locked onto [${targetWord}] in ${guessesCount} probes with ${finalScore} credits. Outstanding orbital calculation!`;
-        } else if (guessesCount <= 12) {
-          fullText = `Target [${targetWord}] deciphered in ${guessesCount} probes. Reliable telemetry logging, pilot.`;
+      if (guessesCount === 1) {
+        return `Phenomenal precision, ${displayCallsign}! You unlocked the center orbit in exactly 1 single probe. Flawless trajectory alignment achieved!`;
+      }
+      if (guessesCount <= 5) {
+        return `Exceptional navigation, ${displayCallsign}. You locked onto [${targetWord}] in ${guessesCount} probes with ${finalScore} credits. Outstanding orbital calculation!`;
+      }
+      if (guessesCount <= 12) {
+        return `Target [${targetWord}] deciphered in ${guessesCount} probes. Reliable telemetry logging, pilot.`;
+      }
+      return `Target [${targetWord}] acquired after ${guessesCount} orbital attempts. Fuel heavy, but mission accomplished!`;
+    };
+
+    // If roast is already loaded or cached, stream it directly once
+    const existingRoast = savedRoast || aiRoast;
+    if (existingRoast && typeof existingRoast === 'string' && existingRoast.trim().length > 0) {
+      setIsLoadingRoast(false);
+      let fullText = existingRoast.trim()
+        .replace(/Pilot_0000[0-9a-zA-Z]*/gi, displayCallsign)
+        .replace(/pilot_[a-z0-9]{8,}/gi, displayCallsign)
+        .replace(/guest_[a-z0-9]{8,}/gi, displayCallsign);
+
+      let currentIndex = 0;
+      setStreamedRoast('');
+      setIsStreaming(true);
+
+      const timer = setInterval(() => {
+        if (currentIndex < fullText.length) {
+          setStreamedRoast(fullText.slice(0, currentIndex + 1));
+          currentIndex++;
         } else {
-          fullText = `Target [${targetWord}] acquired after ${guessesCount} orbital attempts. You burned through fuel, but mission accomplished!`;
+          setIsStreaming(false);
+          clearInterval(timer);
         }
-      }
+      }, 20);
+
+      return () => clearInterval(timer);
     }
 
-    fullText = fullText
-      .replace(/Pilot_0000[0-9a-zA-Z]*/gi, displayCallsign)
-      .replace(/pilot_[a-z0-9]{8,}/gi, displayCallsign)
-      .replace(/guest_[a-z0-9]{8,}/gi, displayCallsign);
+    // Otherwise, fetch AI roast from backend (guarded strictly once per session)
+    if (sessionId && requestedSessionIdRef.current !== sessionId && onRoastLoaded) {
+      requestedSessionIdRef.current = sessionId;
+      setIsLoadingRoast(true);
+      setStreamedRoast('');
 
-    if (sessionId && !savedRoast && !aiRoast && onRoastLoaded) {
       ApiClient.generateRoast(sessionId, isForfeited ? 'savage' : 'hype')
         .then((res) => {
           if (res?.roastText) {
             onRoastLoaded(res.roastText);
+          } else {
+            onRoastLoaded(getFallbackText());
           }
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.warn('Roast fetch fallback:', err);
+          onRoastLoaded(getFallbackText());
+        })
+        .finally(() => {
+          setIsLoadingRoast(false);
+        });
+      return;
     }
 
-    let currentIndex = 0;
-    setStreamedRoast('');
-    setIsStreaming(true);
+    // Fallback if no session ID available
+    if (!sessionId) {
+      const fullText = getFallbackText();
+      let currentIndex = 0;
+      setStreamedRoast('');
+      setIsStreaming(true);
 
-    const timer = setInterval(() => {
-      if (currentIndex < fullText.length) {
-        setStreamedRoast(fullText.slice(0, currentIndex + 1));
-        currentIndex++;
-      } else {
-        setIsStreaming(false);
-        clearInterval(timer);
-      }
-    }, 20);
+      const timer = setInterval(() => {
+        if (currentIndex < fullText.length) {
+          setStreamedRoast(fullText.slice(0, currentIndex + 1));
+          currentIndex++;
+        } else {
+          setIsStreaming(false);
+          clearInterval(timer);
+        }
+      }, 20);
 
-    return () => clearInterval(timer);
+      return () => clearInterval(timer);
+    }
   }, [isOpen, aiRoast, savedRoast, sessionId, effectiveCallsign, onRoastLoaded, isForfeited, targetWord, guessesCount, finalScore]);
 
   if (!isOpen) return null;
@@ -317,8 +348,17 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
               </div>
 
               <p className="font-telemetry-sm text-xs text-white/95 font-mono leading-relaxed min-h-[40px]">
-                &gt; {streamedRoast}
-                {isStreaming && <span className="inline-block w-2 h-3.5 ml-1 animate-pulse bg-[#EF4444]" />}
+                {isLoadingRoast ? (
+                  <span className="text-[#EF4444]/80 animate-pulse flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#EF4444] animate-ping"></span>
+                    EXTRACTING FLIGHT BLACKBOX LOGS...
+                  </span>
+                ) : (
+                  <>
+                    &gt; {streamedRoast}
+                    {isStreaming && <span className="inline-block w-2 h-3.5 ml-1 animate-pulse bg-[#EF4444]" />}
+                  </>
+                )}
               </p>
             </div>
 
@@ -451,8 +491,17 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
               </div>
 
               <p className="font-telemetry-sm text-xs text-white/95 font-mono leading-relaxed min-h-[40px]">
-                &gt; {streamedRoast}
-                {isStreaming && <span className="inline-block w-2 h-3.5 ml-1 animate-pulse bg-primary" />}
+                {isLoadingRoast ? (
+                  <span className="text-primary/80 animate-pulse flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                    SYNTHESIZING MISSION TELEMETRY BLACKBOX...
+                  </span>
+                ) : (
+                  <>
+                    &gt; {streamedRoast}
+                    {isStreaming && <span className="inline-block w-2 h-3.5 ml-1 animate-pulse bg-primary" />}
+                  </>
+                )}
               </p>
             </div>
 

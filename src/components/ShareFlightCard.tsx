@@ -152,150 +152,126 @@ export const ShareFlightCard: FC<ShareFlightCardProps> = ({
         // 1. Draw the high-detail artwork base (Doge / Cat astronaut)
         ctx.drawImage(cachedImg, 0, 0, 1376, 768);
 
-        // 2. Personalize depending on the theme layout
+        // 2. Personalize dynamically for each player onto clean HUD plates (zero black patch boxes)
         if (theme.id === 'tactical') {
-          // --- TACTICAL DOGE OVERLAY ---
-          // A) Cover subtitle with pilot's real name
-          ctx.fillStyle = '#050a06';
-          ctx.fillRect(65, 148, 560, 32);
+          // --- TACTICAL DOGE ---
+          // A) Pilot dynamic callsign
           ctx.fillStyle = '#48ff48';
           ctx.font = 'bold 20px monospace';
           ctx.fillText(`CMDR ${pilotName} [${isForfeited ? 'MIA' : efficiencyRating}]`, 70, 172);
 
           // B) Stat Card 1: Final Credits
-          ctx.fillStyle = '#060d08';
-          ctx.fillRect(66, 218, 195, 122);
-          ctx.strokeStyle = '#48ff4870';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(66, 218, 195, 122);
           ctx.fillStyle = 'rgba(255,255,255,0.7)';
           ctx.font = 'bold 13px monospace';
-          ctx.fillText('FINAL CREDITS:', 80, 246);
+          ctx.fillText('FINAL CREDITS:', 86, 252);
           ctx.fillStyle = isForfeited ? '#EF4444' : '#48ff48';
           ctx.font = 'bold 36px monospace';
-          ctx.fillText(isForfeited ? '0 CR' : `${finalScore} CR`, 80, 292);
+          ctx.fillText(isForfeited ? '0 CR' : `${finalScore} CR`, 86, 294);
           ctx.fillStyle = 'rgba(255,255,255,0.45)';
           ctx.font = '12px monospace';
-          ctx.fillText(isForfeited ? '[FORFEITED]' : '[REGISTERED]', 80, 322);
+          ctx.fillText(isForfeited ? '[FORFEITED]' : '[REGISTERED]', 86, 324);
 
           // C) Stat Card 2: Probes Launched
-          ctx.fillStyle = '#060d08';
-          ctx.fillRect(276, 218, 195, 122);
-          ctx.strokeStyle = '#48ff4870';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(276, 218, 195, 122);
           ctx.fillStyle = 'rgba(255,255,255,0.7)';
           ctx.font = 'bold 13px monospace';
-          ctx.fillText('PROBES LAUNCHED:', 290, 246);
+          ctx.fillText('PROBES LAUNCHED:', 298, 252);
           ctx.fillStyle = '#48ff48';
           ctx.font = 'bold 36px monospace';
-          ctx.fillText(`${guessesCount}`, 290, 292);
+          ctx.fillText(`${guessesCount}`, 298, 294);
           ctx.fillStyle = 'rgba(255,255,255,0.45)';
           ctx.font = '12px monospace';
-          ctx.fillText(`[${guessesCount} BURSTS]`, 290, 322);
+          ctx.fillText(`[${guessesCount} BURSTS]`, 298, 324);
 
           // D) Stat Card 3: Orbit Status
-          ctx.fillStyle = '#060d08';
-          ctx.fillRect(486, 218, 195, 122);
-          ctx.strokeStyle = '#48ff4870';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(486, 218, 195, 122);
           ctx.fillStyle = 'rgba(255,255,255,0.7)';
           ctx.font = 'bold 13px monospace';
-          ctx.fillText('ORBIT STATUS:', 500, 246);
+          ctx.fillText('ORBIT STATUS:', 508, 252);
           ctx.fillStyle = isForfeited ? '#EF4444' : '#48ff48';
           ctx.font = 'bold 32px monospace';
-          ctx.fillText(isForfeited ? 'MIA' : '100% LOCK', 500, 292);
+          ctx.fillText(isForfeited ? 'MIA' : '100% LOCK', 508, 294);
           ctx.fillStyle = 'rgba(255,255,255,0.45)';
           ctx.font = '12px monospace';
-          ctx.fillText(isForfeited ? '[SIGNAL LOST]' : '[DECODED]', 500, 322);
+          ctx.fillText(isForfeited ? '[SIGNAL LOST]' : '[DECODED]', 508, 324);
 
           // E) Top sector date
-          ctx.fillStyle = '#050a06';
-          ctx.fillRect(740, 32, 530, 28);
-          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.fillStyle = 'rgba(255,255,255,0.75)';
           ctx.font = 'bold 13px monospace';
           ctx.fillText(`SECTOR DATE: ${dateStr} • UPLINK: VERIFIED [ENCRYPTED]`, 745, 52);
 
-          // F) Cover bottom URL strip with updated Vercel URL
-          ctx.fillStyle = '#050a06';
-          ctx.fillRect(65, 710, 800, 32);
+          // F) Bottom URL
           ctx.fillStyle = '#48ff48';
           ctx.font = 'bold 13px monospace';
           ctx.fillText('+ INTERCEPT THE DAILY COORDINATE -> https://orbit-o-sigma.vercel.app/', 70, 730);
 
         } else if (theme.id === 'quantum') {
-          // --- QUANTUM CAT OVERLAY ---
-          // A) Cover subtitle with pilot's real name
-          ctx.fillStyle = '#040912';
-          ctx.fillRect(62, 146, 560, 32);
+          // --- QUANTUM CAT ---
+          // A) Pilot dynamic callsign
           ctx.fillStyle = '#00F5FF';
           ctx.font = 'bold 20px monospace';
-          ctx.fillText(`CMDR ${pilotName} [${isForfeited ? 'MIA' : efficiencyRating}]`, 68, 170);
+          ctx.fillText(`CMDR ${pilotName} [${isForfeited ? 'MIA' : efficiencyRating}]`, 68, 154);
 
           // B) Stacked Stat Cards on left
-          const drawCatCard = (y: number, title: string, value: string, isAlert = false) => {
-            ctx.fillStyle = '#050d18';
-            ctx.fillRect(64, y, 195, 58);
-            ctx.strokeStyle = '#00D5FF60';
-            ctx.lineWidth = 1.2;
-            ctx.strokeRect(64, y, 195, 58);
+          // Box 1: Final Credits
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.font = 'bold 11px monospace';
+          ctx.fillText('FINAL CREDITS:', 58, 224);
+          ctx.fillStyle = isForfeited ? '#FF003C' : '#00F5FF';
+          ctx.font = 'bold 18px monospace';
+          ctx.fillText(isForfeited ? '0 CR [MIA]' : `${finalScore} CR`, 58, 246);
 
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.font = 'bold 11px monospace';
-            ctx.fillText(title, 76, y + 22);
-
-            ctx.fillStyle = isAlert ? '#FF003C' : '#00F5FF';
-            ctx.font = 'bold 15px monospace';
-            ctx.fillText(value, 76, y + 46);
-          };
-
-          drawCatCard(208, 'SECTOR DATE:', `${dateStr}`);
-          drawCatCard(278, 'FINAL CREDITS:', isForfeited ? '0 CR [FORFEITED]' : `${finalScore} CR`, isForfeited);
-          drawCatCard(348, 'PROBES DEPLOYED:', `${guessesCount} BURSTS`);
-          drawCatCard(418, 'ORBIT LOCK:', isForfeited ? 'MIA [SIGNAL LOST]' : '100% [VERIFIED]', isForfeited);
-
-          // C) Cover bottom URL strip with updated Vercel URL
-          ctx.fillStyle = '#050d18';
-          ctx.fillRect(64, 706, 800, 30);
-          ctx.fillStyle = '#00D5FF';
-          ctx.font = 'bold 13px monospace';
-          ctx.fillText('+ INTERCEPT THE DAILY COORDINATE -> https://orbit-o-sigma.vercel.app/', 70, 726);
-
-        } else if (theme.id === 'synthwave') {
-          // --- CYBER SYNTH SHIBA OVERLAY ---
-          // A) Cover subtitle in top-center box
-          ctx.fillStyle = '#10081c';
-          ctx.fillRect(425, 78, 510, 30);
+          // Box 2: Probes Deployed
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.font = 'bold 11px monospace';
+          ctx.fillText('PROBES DEPLOYED:', 58, 294);
           ctx.fillStyle = '#00F5FF';
-          ctx.font = 'bold 19px monospace';
-          ctx.fillText(`CMDR ${pilotName} [${isForfeited ? 'MIA' : efficiencyRating}]`, 440, 100);
-
-          // B) Center stats card
-          ctx.fillStyle = '#0e0618';
-          ctx.fillRect(530, 126, 320, 118);
-          ctx.strokeStyle = '#FF007F70';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(530, 126, 320, 118);
-
-          ctx.fillStyle = isForfeited ? '#FF007F' : '#00F5FF';
-          ctx.font = 'bold 16px monospace';
-          ctx.fillText(`CREDITS: ${isForfeited ? '0 CR' : `${finalScore} CR`}`, 550, 156);
-
-          ctx.fillStyle = '#FFFFFF';
           ctx.font = 'bold 15px monospace';
-          ctx.fillText(`PROBES: ${guessesCount} DEPLOYED`, 550, 190);
+          ctx.fillText(`${guessesCount}/2 [${guessesCount} BURSTS]`, 58, 316);
 
-          ctx.fillStyle = isForfeited ? '#EF4444' : '#FF007F';
+          // Box 3: Orbit Lock
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.font = 'bold 11px monospace';
+          ctx.fillText('ORBIT LOCK:', 58, 364);
+          ctx.fillStyle = isForfeited ? '#FF003C' : '#00F5FF';
           ctx.font = 'bold 15px monospace';
-          ctx.fillText(`ORBIT LOCK: ${isForfeited ? 'FORFEITED / MIA' : '100%'}`, 550, 224);
+          ctx.fillText(isForfeited ? '0% [LOST]' : '100% [VECTOR VERIFIED]', 58, 386);
 
-          // C) Cover bottom URL strip with updated Vercel URL
-          ctx.fillStyle = '#090514';
-          ctx.fillRect(80, 705, 1216, 48);
+          // Box 4: Sector Date
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.font = 'bold 11px monospace';
+          ctx.fillText('SECTOR DATE:', 58, 438);
           ctx.fillStyle = '#00F5FF';
           ctx.font = 'bold 14px monospace';
-          ctx.fillText('+ INTERCEPT THE DAILY COORDINATE -> https://orbit-o-sigma.vercel.app/', 360, 735);
+          ctx.fillText(`${dateStr}`, 58, 460);
+
+          // C) Bottom URL
+          ctx.fillStyle = '#00D5FF';
+          ctx.font = 'bold 13px monospace';
+          ctx.fillText('+ INTERCEPT THE DAILY COORDINATE -> https://orbit-o-sigma.vercel.app/', 70, 730);
+
+        } else if (theme.id === 'synthwave') {
+          // --- CYBER SYNTH SHIBA ---
+          // A) Pilot dynamic callsign
+          ctx.fillStyle = '#00F5FF';
+          ctx.font = 'bold 19px monospace';
+          ctx.fillText(`CMDR ${pilotName} [${isForfeited ? 'MIA' : efficiencyRating}]`, 450, 114);
+
+          // B) Center stats card
+          ctx.fillStyle = isForfeited ? '#FF007F' : '#00F5FF';
+          ctx.font = 'bold 18px monospace';
+          ctx.fillText(`CREDITS: ${isForfeited ? '0 CR' : `${finalScore} CR`}`, 560, 215);
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = 'bold 16px monospace';
+          ctx.fillText(`PROBES: ${guessesCount} DEPLOYED`, 560, 255);
+
+          ctx.fillStyle = isForfeited ? '#EF4444' : '#FF007F';
+          ctx.font = 'bold 16px monospace';
+          ctx.fillText(`ORBIT LOCK: ${isForfeited ? 'SIGNAL LOST' : '100%'}`, 560, 295);
+
+          // C) Bottom URL
+          ctx.fillStyle = '#00F5FF';
+          ctx.font = 'bold 14px monospace';
+          ctx.fillText('+ INTERCEPT THE DAILY COORDINATE -> https://orbit-o-sigma.vercel.app/', 360, 738);
         }
       } else {
         // High-tech procedural fallback while image loads
