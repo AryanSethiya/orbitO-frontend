@@ -369,7 +369,7 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
               <span className="font-bold text-[#EF4444] font-mono tracking-wider">{countdown}</span>
             </div>
 
-            {/* Share Badge Card with 3 Theme Switcher */}
+            {/* Share Badge Card with Theme & Instagram Story Switcher */}
             <div>
               <ShareFlightCard
                 puzzleDate={puzzleDate}
@@ -379,6 +379,8 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
                 isForfeited={true}
                 userCallsign={effectiveCallsign || 'Pilot'}
                 efficiencyRating={efficiencyRating}
+                aiRoast={streamedRoast || savedRoast || aiRoast}
+                targetWord={targetWord}
               />
             </div>
 
@@ -588,7 +590,7 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
               </div>
             )}
 
-            {/* Official Mission Flight Badge with Visual PNG Preview */}
+            {/* Official Mission Flight Badge with Visual PNG & Instagram Story Preview */}
             <div className="pt-1">
               <ShareFlightCard
                 puzzleDate={puzzleDate}
@@ -598,6 +600,8 @@ export const OrbitSolvedModal: FC<OrbitSolvedModalProps> = ({
                 isForfeited={false}
                 userCallsign={effectiveCallsign || 'Pilot'}
                 efficiencyRating={efficiencyRating}
+                aiRoast={streamedRoast || savedRoast || aiRoast}
+                targetWord={targetWord}
               />
             </div>
 

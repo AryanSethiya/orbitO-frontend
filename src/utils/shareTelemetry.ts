@@ -8,6 +8,7 @@ export interface ShareTelemetryParams {
   isForfeited?: boolean;
   userCallsign: string;
   efficiencyRating: string;
+  aiRoast?: string | null;
 }
 
 /**
@@ -21,6 +22,7 @@ export const generateShareText = ({
   isForfeited = false,
   userCallsign,
   efficiencyRating,
+  aiRoast,
 }: ShareTelemetryParams): string => {
   const dateStr = puzzleDate || new Date().toISOString().split('T')[0];
   const cleanCallsign =
@@ -30,16 +32,20 @@ export const generateShareText = ({
       ? userCallsign
       : 'PILOT';
 
+  const cleanRoast = aiRoast ? aiRoast.trim().replace(/^["']|["']$/g, '') : null;
+
   if (isForfeited) {
-    return [
+    const lines = [
       `🛰️ ORBITO MISSION REPORT #${dateStr}`,
       `Pilot: ${cleanCallsign} // STATUS: MIA`,
       `Probes Deployed: ${guessesCount} | Credits: 0 CR`,
       `Status: Signal lost in deep void 📡`,
-      ``,
-      `Can you decipher the orbital frequency?`,
-      `https://orbit-o-sigma.vercel.app/`,
-    ].join('\n');
+    ];
+    if (cleanRoast) {
+      lines.push(``, `🤖 AI ROAST: "${cleanRoast}"`);
+    }
+    lines.push(``, `Can you decipher the orbital frequency?`, `https://orbit-o-sigma.vercel.app/`);
+    return lines.join('\n');
   }
 
   // Generate radar trajectory blocks
@@ -81,15 +87,20 @@ export const generateShareText = ({
     telemetryRows = [`🎯 ▓▓▓▓▓▓▓▓▓▓ 100% DIRECT LOCK`];
   }
 
-  return [
+  const resultLines = [
     `🛰️ ORBITO FLIGHT LOG #${dateStr}`,
     `Pilot: ${cleanCallsign} [${efficiencyRating}]`,
     `Probes: ${guessesCount} | Score: ${finalScore} CR`,
     `Status: ORBIT ACQUIRED ⚡`,
     ``,
     ...telemetryRows,
-    ``,
-    `Intercept today's coordinate:`,
-    `https://orbit-o-sigma.vercel.app/`,
-  ].join('\n');
+  ];
+
+  if (cleanRoast) {
+    resultLines.push(``, `🤖 AI ROAST: "${cleanRoast}"`);
+  }
+
+  resultLines.push(``, `Intercept today's coordinate:`, `https://orbit-o-sigma.vercel.app/`);
+
+  return resultLines.join('\n');
 };
